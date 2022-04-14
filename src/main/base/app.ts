@@ -91,7 +91,8 @@ export class AppEvents {
         }
 
         if (process.platform === "linux") {
-            app.commandLine.appendSwitch('disable-features', 'MediaSessionService');
+            app.commandLine.appendSwitch('disable-features', 'MediaSessionService')
+            app.commandLine.appendSwitch('enable-transparent-visuals');
         }
 
         /***********************************************************************************************************************

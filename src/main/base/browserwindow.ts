@@ -15,8 +15,6 @@ import {Plugins} from "./plugins";
 import {watch} from "chokidar";
 import * as os from "os";
 const wallpaper = require('wallpaper');
-const glasstron = require('glasstron');
-const electron = require('electron');
 
 // @ts-ignore
 import * as AdmZip from "adm-zip";

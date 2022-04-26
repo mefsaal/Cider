@@ -1228,6 +1228,18 @@ body[platform="darwin"] .app-chrome .app-chrome-item > .window-controls > div.cl
     margin-bottom: 15px;
   }
 }
+// Add Music Video Icons to Songs that are Music Videos
+div[data-type="library-music-videos"] .info-rect .title::before,
+div[data-type="musicVideo"] .info-rect .title::before {
+    content: "";
+    background-image: url(./assets/feather/video.svg);
+    background-size: contain;
+    filter:invert(0.6);
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-bottom: -4px;
+}
 
 .app-chrome .app-chrome-item > .app-playback-controls .song-duration p {
   font-weight: 400;
@@ -1261,7 +1273,7 @@ body[platform="darwin"] .app-chrome .app-chrome-item > .window-controls > div.cl
 
 
 .marquee {
-  animation: marquee 15s linear infinite;
+  animation: marquee 15s linear  2s infinite;
 
   &.song-artist {
     overflow: unset;
@@ -1630,7 +1642,7 @@ input[type="range"].web-slider.display--small::-webkit-slider-thumb {
 }
 
 .lyricWaiting {
-  margin-top: 8px;
+  margin-bottom:10px;
   display: none;
 }
 
@@ -3123,6 +3135,21 @@ body.no-gpu {
   }
 }
 
+.keybindings-border {
+  padding-left: 15px;
+  padding-right: 15px;
+  border-style: solid;
+  border-radius: 5px;
+  border-color: #CBCBCB;
+}
+
+.keybinding-text {
+  width: 95px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .qrimg {
   width: -webkit-fill-available;
   max-block-size: -webkit-fill-available;
@@ -3265,6 +3292,11 @@ body[platform='darwin'] {
 
 .percent::after {
   content: '%';
+}
+
+.playbackrate-text {
+  align-items: end;
+  margin-right: 5px;
 }
 
 .modal .close {

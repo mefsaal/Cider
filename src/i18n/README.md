@@ -2,7 +2,7 @@
 
 Some notes about Cider's i18n support.
 
-- Localization files are stored in jsonc format aka "JSON with Comments"
+- Localization files are stored in `json` format aka "JavaScript Object Notation".
 - The default language is English.
 - The default language is used for messages that are not translated.
 - Try when possible to keep the messages the similar in length to the English ones.
@@ -27,7 +27,6 @@ How it is implemented for English:
     "other" : "tracks"
   },
 ```
-
 
 
 ## Localization Notices
@@ -190,18 +189,22 @@ Update 28/02/2022 13:00 UTC
 * `term.time.day`: Added for `en_US`
 
 Update 10/03/2022 14:00 UTC
+
 * `settings.header.window`: Added for `en_US`
 * `settings.header.window.description`: Added for `en_US`
 * `settings.option.window.openOnStartup`: Added for `en_US`
 * `settings.option.window.openOnStartup.hidden`: Added for `en_US`
 
 Update 20/03/2022 00:01 UTC
+
 * `term.creditDesignedBy`: Added for `en_US`
 
 Update 29/03/2022 04:00 UTC
+
 * `settings.option.audio.enableAdvancedFunctionality.ciderPPE.description`: Changed for `en_US` (Deleted for all language files)
 
-Update 06/04/2022 08:30 UTC 
+Update 06/04/2022 08:30 UTC
+
 * `settings.option.general.customizeSidebar`: Added for `en_US`
 * `settings.option.general.customizeSidebar.customize`: Added for `en_US`
 * `settings.option.window.useNativeTitleBar`: Added for `en_US`
@@ -246,3 +249,44 @@ Update 09/04/2022 13:45 UTC
 
 * `action.tray.show`: Changed for `en_US` (Deleted for all language files)
 
+Update 14/04/2022 14:30 UTC
+
+* `term.variables`: Added for `en_US`
+* `settings.option.connectivity.discordRPC.clientName`: Added for `en_US`
+* `settings.option.connectivity.discordRPC.detailsFormat`: Added for `en_US`
+* `settings.option.connectivity.discordRPC.stateFormat`: Added for `en_US`
+* `settings.header.connectivity.discordRPC.cider`: Removed from `en_US`
+* `settings.header.connectivity.discordRPC.appleMusic`: Removed from `en_US`
+
+Update 16/04/2022 9:30 UTC
+
+* `settings.header.connect`: Added for `en_US`
+
+Update 22/04/2022 13:00 UTC
+
+* `settings.option.general.keybindings`: Added for `en_US`
+* `settings.option.general.keybindings.open`: Added for `en_US`
+
+Update 22/04/2022 16:00 UTC
+
+* `settings.option.visual.theme.github.openfolder`: Added for `en_US`
+
+Update 24/04/2022 19:00 UTC
+
+* `settings.option.audio.changePlaybackRate`: Added for `en_US`
+* `settings.option.audio.playbackRate`: Added for `en_US`
+* `settings.option.audio.playbackRate.change`: Added for `en_US`
+
+Update 25/04/2022 00:21 UTC
+
+*  `settings.description.search`: Added for `en_US`
+*  `settings.description.albums`: Added for `en_US`
+*  `settings.description.artists`: Added for `en_US`
+*  `settings.description.browse`: Added for `en_US`
+*  `settings.description.private`: Added for `en_US`
+*  `settings.description.remote`: Added for `en_US`
+*  `settings.description.audio`: Added for `en_US`
+*  `settings.description.plugins`: Added for `en_US`
+*  `settings.description.cast`: Added for `en_US`
+*  `settings.description.settings`: Added for `en_US`
+*  `settings.description.developer`: Added for `en_US`

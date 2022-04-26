@@ -11626,7 +11626,7 @@ input[type="range"].web-slider.display--small::-webkit-slider-thumb {
   filter: none !important;
 }
 .lyricWaiting {
-  margin-top: 8px;
+  margin-bottom: 10px;
   display: none;
 }
 .lyric-line.active .lyricWaiting {
@@ -12826,6 +12826,19 @@ body.no-gpu .drawertransition-leave-to {
 body.no-gpu .lyric-line:hover::after {
   display: none;
 }
+.keybindings-border {
+  padding-left: 15px;
+  padding-right: 15px;
+  border-style: solid;
+  border-radius: 5px;
+  border-color: #CBCBCB;
+}
+.keybinding-text {
+  width: 95px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .qrimg {
   width: -webkit-fill-available;
   max-block-size: -webkit-fill-available;
@@ -12940,6 +12953,10 @@ body[platform='darwin'] .app-chrome .app-chrome-item > .app-mainmenu {
 }
 .percent::after {
   content: '%';
+}
+.playbackrate-text {
+  align-items: end;
+  margin-right: 5px;
 }
 .spatialproperties-panel.modal-fullscreen {
   flex-direction: column;

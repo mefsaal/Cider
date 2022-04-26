@@ -123,6 +123,108 @@
                                 </div>
                             </b-modal>
                         </div>
+                        <div class="md-option-line">
+                            <div class="md-option-segment">
+                                {{$root.getLz('settings.option.general.keybindings')}}
+                            </div>
+                            <div class="md-option-segment md-option-segment_auto">
+                                <button class="md-btn" v-b-modal.modal-2>
+                                    {{$root.getLz('settings.option.general.keybindings.open')}}
+                                </button>
+                            </div>
+                            <b-modal id="modal-2" centered  size="lg" v-title="$root.getLz('settings.option.general.keybindings')" ok-only>
+                                <div class="settings-option-body">
+                                    <div class="md-option-line">
+                                        <div class="md-option-segment">
+                                            {{$root.getLz('settings.description.search')}}
+                                        </div>        
+                                        <div class="md-option-segment md-option-segment_auto keybindings-border">
+                                            <p class="keybinding-text">{{ getCommandOrControl() }} + F</p>
+                                        </div>    
+                                    </div>
+                                    <div class="md-option-line">
+                                        <div class="md-option-segment">
+                                            {{$root.getLz('settings.description.albums')}}
+                                        </div>        
+                                        <div class="md-option-segment md-option-segment_auto keybindings-border">
+                                            <p class="keybinding-text">{{ getCommandOrControl() }} + A</p>
+                                        </div>    
+                                    </div>
+                                    <div class="md-option-line">
+                                        <div class="md-option-segment">
+                                            {{$root.getLz('settings.description.artists')}}
+                                        </div>        
+                                        <div class="md-option-segment md-option-segment_auto keybindings-border">
+                                            <p class="keybinding-text">{{ getCommandOrControl() }} + D</p>
+                                        </div>    
+                                    </div>
+                                    <div class="md-option-line">
+                                        <div class="md-option-segment">
+                                            {{$root.getLz('settings.description.browse')}}
+                                        </div>        
+                                        <div class="md-option-segment md-option-segment_auto keybindings-border">
+                                            <p class="keybinding-text">{{ getCommandOrControl() }} + B</p>
+                                        </div>    
+                                    </div>                               
+                                    <div class="md-option-line">
+                                        <div class="md-option-segment">
+                                            {{$root.getLz('settings.description.private')}}
+                                        </div>
+                                        <div class="md-option-segment md-option-segment_auto keybindings-border">
+                                            <p class="keybinding-text">{{ getCommandOrControl() }} + P</p>
+                                        </div>
+                                    </div>
+                                    <div class="md-option-line">
+                                        <div class="md-option-segment">
+                                            {{$root.getLz('settings.description.remote')}}
+                                        </div>
+                                        <div class="md-option-segment md-option-segment_auto keybindings-border">
+                                            <p class="keybinding-text">{{ getCommandOrControl() }} + Shift + W</p>
+                                        </div>
+                                    </div>
+                                    <div class="md-option-line">
+                                        <div class="md-option-segment">
+                                            {{$root.getLz('settings.description.audio')}}
+                                        </div>
+                                        <div class="md-option-segment md-option-segment_auto keybindings-border">
+                                            <p class="keybinding-text">{{ getCommandOrControl() }} + Shift + A</p>
+                                        </div>
+                                    </div>
+                                    <div class="md-option-line">
+                                        <div class="md-option-segment">
+                                            {{$root.getLz('settings.description.plugins')}}
+                                        </div>
+                                        <div class="md-option-segment md-option-segment_auto keybindings-border">
+                                            <p class="keybinding-text">{{ getCommandOrControl() }} + Shift + P</p>
+                                        </div>
+                                    </div>
+                                    <div class="md-option-line">
+                                        <div class="md-option-segment">
+                                            {{$root.getLz('settings.description.cast')}}
+                                        </div>
+                                        <div class="md-option-segment md-option-segment_auto keybindings-border">
+                                            <p class="keybinding-text">{{ getCommandOrControl() }} + Shift + C</p>
+                                        </div>
+                                    </div>
+                                    <div class="md-option-line">
+                                        <div class="md-option-segment">
+                                            {{$root.getLz('settings.description.settings')}}
+                                        </div>        
+                                        <div class="md-option-segment md-option-segment_auto keybindings-border">
+                                            <p class="keybinding-text">{{ getCommandOrControl() }} + S</p>
+                                        </div>    
+                                    </div>
+                                    <div class="md-option-line">
+                                        <div class="md-option-segment">
+                                            {{$root.getLz('settings.description.developer')}}
+                                        </div>
+                                        <div class="md-option-segment md-option-segment_auto keybindings-border">
+                                            <p class="keybinding-text">{{ getCommandOrControl() }} + {{ getOptionOrShift() }} + I</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </b-modal>
+                        </div>
                     </div>
                 </div>
             </b-tab>
@@ -154,6 +256,16 @@
                             <div class="md-option-segment md-option-segment_auto">
                                 <button class="md-btn" onclick="app.modals.audioControls = true">
                                     {{$root.getLz('term.audioControls')}}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="md-option-line">
+                            <div class="md-option-segment">
+                                {{$root.getLz('settings.option.audio.changePlaybackRate')}}
+                            </div>
+                            <div class="md-option-segment md-option-segment_auto">
+                                <button class="md-btn" onclick="app.modals.audioPlaybackRate = true">
+                                    {{$root.getLz('settings.option.audio.playbackRate.change')}}
                                 </button>
                             </div>
                         </div>
@@ -204,7 +316,7 @@
                                 <small>{{app.cfg.audio.equalizer.vibrantBass != 0 || app.cfg.audio.maikiwiAudio.spatial === true || app.cfg.audio.maikiwiAudio.ciderPPE === true ? `${$root.getLz('settings.option.audio.enableAdvancedFunctionality.audioNormalization.description')}\n${$root.getLz('settings.option.audio.enableAdvancedFunctionality.audioNormalization.disabled')}` : $root.getLz('settings.option.audio.enableAdvancedFunctionality.audioNormalization.description')}}</small>
                             </div>
                             <div class="md-option-segment md-option-segment_auto">
-                                <input type="checkbox" v-model="app.cfg.audio.normalization" v-on:change="toggleNormalization" 
+                                <input type="checkbox" v-model="app.cfg.audio.normalization" v-on:change="toggleNormalization"
                                 :disabled="app.cfg.audio.spatial === true || app.cfg.audio.maikiwiAudio.spatial === true || app.cfg.audio.maikiwiAudio.ciderPPE === true || app.cfg.audio.maikiwiAudio.atmosphereRealizer === true" switch/>
                             </div>
                         </div>
@@ -394,7 +506,7 @@
                                 </div>
                                 <div class="md-option-segment md-option-segment_auto">
                                     <input type="checkbox" switch checked/>
-                                    <!-- <input type="checkbox" v-model="app.cfg.lyrics.enable_mxm" switch /> --> 
+                                    <!-- <input type="checkbox" v-model="app.cfg.lyrics.enable_mxm" switch /> -->
                                 </div>
                             </div>
                         </div>
@@ -710,36 +822,68 @@
                             </div>
                         </div>
 
+                        <!-- DiscordRPC -->
                         <div class="md-option-line">
                             <div class="md-option-segment">
                                 {{$root.getLz('settings.option.connectivity.discordRPC')}}
                             </div>
                             <div class="md-option-segment md-option-segment_auto">
-                                <select class="md-select" v-model="app.cfg.general.discord_rpc">
-                                    <option value="0">{{$root.getLz('term.disabled')}}</option>
-                                    <option value="1">{{$root.getLz('settings.header.connectivity.discordRPC.cider')}}</option>
-                                    <option value="2">{{$root.getLz('settings.header.connectivity.discordRPC.appleMusic')}}
+                                <input type="checkbox" v-model="app.cfg.general.discord_rpc.enabled" switch/>
+                            </div>
+                        </div>
+
+                        <div class="md-option-line" v-show="app.cfg.general.discord_rpc.enabled != false">
+                            <div class="md-option-segment">
+                                {{$root.getLz('settings.option.connectivity.discordRPC.clientName')}}
+                            </div>
+                            <div class="md-option-segment md-option-segment_auto">
+                                <select class="md-select" v-model="app.cfg.general.discord_rpc.client">
+                                    <option value="Cider">{{$root.getLz('app.name')}}</option>
+                                    <option value="AppleMusic">{{$root.getLz('term.appleMusic')}}
                                     </option>
                                 </select>
                             </div>
                         </div>
-                        <div class="md-option-line" v-show="app.cfg.general.discord_rpc != 0">
+
+                        <div class="md-option-line" v-show="app.cfg.general.discord_rpc.enabled != false">
                             <div class="md-option-segment">
                                 {{$root.getLz('settings.option.connectivity.discordRPC.clearOnPause')}}
                             </div>
                             <div class="md-option-segment md-option-segment_auto">
-                                <input type="checkbox" v-model="app.cfg.general.discord_rpc_clear_on_pause" switch/>
+                                <input type="checkbox" v-model="app.cfg.general.discord_rpc.clear_on_pause" switch/>
                             </div>
                         </div>
-                        <div class="md-option-line" v-show="app.cfg.general.discord_rpc != 0">
+
+                        <div class="md-option-line" v-show="app.cfg.general.discord_rpc.enabled != false">
 	                        <div class="md-option-segment">
-								{{$root.getLz('settings.option.connectivity.discordRPC.hideButtons')}}<br>
-	                            <small>({{$root.getLz('settings.option.visual.hardwareAcceleration.description')}})</small>
+								{{$root.getLz('settings.option.connectivity.discordRPC.hideButtons')}}
 	                        </div>
 	                        <div class="md-option-segment md-option-segment_auto">
-	                            <input type="checkbox" v-model="app.cfg.general.discord_rpc_hide_buttons" switch/>
+	                            <input type="checkbox" v-model="app.cfg.general.discord_rpc.hide_buttons" switch/>
 	                        </div>
 	                    </div>
+
+                        <div class="md-option-line" v-show="app.cfg.general.discord_rpc.enabled != false">
+                            <div class="md-option-segment">
+                                {{$root.getLz('settings.option.connectivity.discordRPC.detailsFormat')}}<br/>
+                                <small>{{$root.getLz('term.variables')}}: {artist}, {composer}, {title}, {album}, {trackNumber}</small>
+                            </div>
+                            <div class="md-option-segment md-option-segment_auto">
+                                <input type="text" v-model="app.cfg.general.discord_rpc.details_format"/>
+                            </div>
+                        </div>
+
+                        <div class="md-option-line" v-show="app.cfg.general.discord_rpc.enabled != false">
+                            <div class="md-option-segment">
+                                {{$root.getLz('settings.option.connectivity.discordRPC.stateFormat')}}
+                                <small>{{$root.getLz('term.variables')}}: {artist}, {composer}, {title}, {album}, {trackNumber}</small>
+                            </div>
+                            <div class="md-option-segment md-option-segment_auto">
+                                <input type="text" v-model="app.cfg.general.discord_rpc.state_format"/>
+                            </div>
+                        </div>
+
+                        <!-- LastFM -->
                         <div class="md-option-line">
                             <div class="md-option-segment">
                                 {{$root.getLz('settings.option.connectivity.lastfmScrobble')}}
@@ -821,6 +965,17 @@
                     </div>
                     <div class="settings-option-body">
 
+                        <div class="md-option-line" v-show="app.cfg.advanced.AudioContext">
+                            <div class="md-option-segment">
+                                FFmpeg location<br/>
+                                <small>Restart needed to work. Required for AirPlay. (For example: C:\ffmpeg-4.4-essentials_build\bin\ffmpeg.exe)</small><br/>
+                                <small>You can look at the internet on how to install it.</small>
+                            </div>
+                            <div class="md-option-segment md-option-segment_auto">
+                                <input type="text" v-model="app.cfg.advanced.ffmpegLocation"/>
+                            </div>
+                        </div>
+
                         <div class="md-option-line">
                             <div class="md-option-segment">
                                 {{$root.getLz('settings.option.visual.plugin.github.explore')}}
@@ -887,7 +1042,7 @@
                                 {{$root.getLz('settings.option.experimental.inline_playlists')}}
                             </div>
                             <div class="md-option-segment md-option-segment_auto">
-                                <input type="checkbox" v-model="app.cfg.advanced.experiments.includes('inline-playlists')" @click="app.cfg.advanced.experiments.includes('inline-playlists') ? removeExperiment('inline-playlists') : addExperiment('inline-playlists')" switch/>
+                                <input type="checkbox" disabled v-model="app.cfg.advanced.experiments.includes('inline-playlists')" @click="app.cfg.advanced.experiments.includes('inline-playlists') ? removeExperiment('inline-playlists') : addExperiment('inline-playlists')" switch/>
                             </div>
                         </div>
 
@@ -940,6 +1095,77 @@
                             <div class="md-option-segment md-option-segment_auto">
                                 <input type="checkbox" v-model="app.cfg.visual.transparent" switch @change="promptForRelaunch()"/>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </b-tab>
+            <!-- Connect Settings -->
+            <b-tab :title="$root.getLz('settings.header.connect')">
+                <div class="md-option-container">
+                    <!-- Cider Connect / Linking Settings -->
+                    <div class="md-option-header">
+                        <span>{{$root.getLz('settings.header.connect')}}</span>
+                    </div>
+                    <div class="settings-option-body">
+                        <div class="md-option-line update-check" v-if="app.cfg.connectUser.auth == null">
+                            <div class="md-option-segment">
+                                {{$root.getLz('settings.option.connect.link_account')}}
+                                <small>{{$root.getLz('settings.option.connect.link_account.description')}}</small>
+                                <br>
+                                <small>Debug Status: {{ app.cfg.connectUser }}</small>
+                            </div>
+                            <div class="md-option-segment md-option-segment_auto">
+                                <button class="md-btn" id='settings.option.general.updateCider.check' @click="authCC()">
+                                    {{$root.getLz('term.connect')}}
+                                </button>
+                            </div>
+                        </div>
+                        <div v-if="app.cfg.connectUser.auth != null">
+                            <div class="md-option-line">
+                                <div class="md-option-segment">
+                                    {{$root.getLz('settings.option.connect.link_account')}}
+                                    <small>{{$root.getLz('settings.option.connect.link_account.description')}}</small>
+                                    <br>
+                                </div>
+                                <div class="md-option-segment md-option-segment_auto">
+                                    <button class="md-btn" id='settings.option.general.updateCider.check' @click="logoutCC()" style="display: flex;align-items: center;gap: 0.4em;">
+                                        <%- include("../svg/check.svg") %>
+                                        <div v>Connected</div>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="md-option-header" style="margin-left: -0.55em;">
+                                <span>{{app.cfg.connectUser.username}}</span>
+                                <img :src="'https://cdn.discordapp.com/avatars/' + app.cfg.connectUser.id + '/' + app.cfg.connectUser.avatar + '.png?size=32'"></img>
+                            </div>
+
+                            <div class="md-option-line">
+                                <div class="md-option-segment">
+                                    Sync Settings
+                                </div>
+                                <div class="md-option-segment md-option-segment_auto">
+                                    <input type="checkbox" disabled a-v-model="app.cfg.connectUser.sync.settings" @click="app.cfg.connectUser.sync.settings = !app.cfg.connectUser.sync.settings" switch/>
+                                </div>
+                            </div>
+
+                            <div class="md-option-line">
+                                <div class="md-option-segment">
+                                    Sync Themes
+                                </div>
+                                <div class="md-option-segment md-option-segment_auto">
+                                    <input type="checkbox" disabled a-v-model="app.cfg.connectUser.sync.themes" @click="app.cfg.connectUser.sync.themes = !app.cfg.connectUser.sync.themes" switch/>
+                                </div>
+                            </div>
+
+                            <div class="md-option-line">
+                                <div class="md-option-segment">
+                                    Sync Plugins
+                                </div>
+                                <div class="md-option-segment md-option-segment_auto">
+                                    <input type="checkbox" disabled a-v-model="app.cfg.connectUser.sync.plugins" @click="app.cfg.connectUser.sync.plugins = !app.cfg.connectUser.sync.plugins" switch/>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -1010,7 +1236,7 @@
             },
             getThemeName(filename) {
                 try {
-                    return this.themes.find(theme => theme.file === filename).name;                    
+                    return this.themes.find(theme => theme.file === filename).name;
                 }catch(e) {
                     return filename;
                 }
@@ -1068,6 +1294,12 @@
             }
         },
         methods: {
+            getCommandOrControl() {
+                return app.platform == "darwin" ? "⌘" : "Ctrl";
+            },
+            getOptionOrShift() {
+                return app.platform == "darwin" ? "⌥" : "Shift";
+            },
             windowBgStyleChange() {
                 this.$root.getNowPlayingArtworkBG(undefined, true)
                 if (this.$root.cfg.visual.window_background_style == "mica") {
@@ -1180,7 +1412,13 @@
                         ipcRenderer.send('relaunchApp', '');
                     }
                 });
-            }
+            },
+            authCC() {
+                ipcRenderer.send('cc-auth')
+            },
+            logoutCC() {
+                ipcRenderer.send('cc-logout')
+            },
         }
     })
 </script>

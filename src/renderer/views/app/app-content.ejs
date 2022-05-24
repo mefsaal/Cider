@@ -24,7 +24,7 @@
             </template>
         </transition>
     <% } %>
-
+    <button class="openbtn" onclick="closeNav()">☰ Open Sidebar</button>  
     <transition v-on:enter="getRadioStations()" :name="chrome.desiredPageTransition">
         <template v-if="page == 'radio'" @created="console.log('radio')">
             <div class="content-inner">

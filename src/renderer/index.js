@@ -292,3 +292,12 @@ window.onerror = function (error) {
     console.log(error)
     bootbox.alert("Error occurred: " + error)
 };
+
+function openNav() {
+    document.getElementById("app-sidebar").style.display = "initial";
+  }
+  
+  function closeNav() {
+    document.getElementById("app-sidebar").style.display = "none";
+    document.getElementById("app-content").style.marginLeft = "0";
+  }

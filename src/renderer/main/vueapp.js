@@ -246,7 +246,7 @@ const app = new Vue({
     watch: {
         cfg: {
             handler: function (val, oldVal) {
-                console.debug(`cfg changed from ${oldVal} to ${val}`);
+                console.debug(`Config changed: ${JSON.stringify(val)}`);
                 ipcRenderer.send("setStore", val);
             },
             deep: true
@@ -483,6 +483,10 @@ const app = new Vue({
                     resolve(this.chrome.desiredPageTransition = "wpfade_transform")
                 }, 100)
             })
+        },
+        goToGrouping(url = "https://music.apple.com/WebObjects/MZStore.woa/wa/viewGrouping?cc=us&id=34") {
+            const id = url.split("id=")[1];
+            window.location.hash = `#groupings/${id}`
         },
         navigateForward() {
             history.forward()
@@ -950,7 +954,7 @@ const app = new Vue({
                     });
                 }
                 setTimeout(() => {
-                    let i = (document.querySelector('#apple-music-player').src ?? "")
+                    let i = (document.querySelector('#apple-music-player')?.src ?? "")
                     if (i.endsWith(".m3u8") || i.endsWith(".m3u")){
                         this._playRadioStream(i)
                     }
@@ -968,7 +972,9 @@ const app = new Vue({
                 this.appRoute(window.location.hash)
             }
 
-            this.resumeTabs()
+            if(this.page != "home") {
+                this.resumeTabs()
+            }
             this.mediaKeyFixes()
 
             setTimeout(() => {
@@ -1401,6 +1407,16 @@ const app = new Vue({
                     }, 8000);
                 })
             }
+        },
+        /** 
+         * @param {string} url, href for the initial request
+         * @memberof app
+        */
+        async showRoom(url) {
+            let self = this
+            const response = await this.mk.api.v3.music(url)
+            let room = response.data.data[0]
+            this.showCollection(room.relationships.contents, room.attributes.title)
         },
         async showCollection(response, title, type, requestBody = {}) {
             let self = this
@@ -3887,19 +3903,15 @@ const app = new Vue({
         volumeUp() {
             if ((app.mk.volume + app.cfg.audio.volumeStep) > app.cfg.audio.maxVolume) {
                 app.mk.volume = app.cfg.audio.maxVolume;
-                console.debug('setting max volume')
             } else {
-                console.log('volume up')
-                app.mk.volume = ((app.mk.volume * 100) + (app.cfg.audio.volumeStep * 100)) / 100
+                app.mk.volume = (Math.floor((app.mk.volume * 100)) + (app.cfg.audio.volumeStep * 100)) / 100
             }
         },
         volumeDown() {
             if ((app.mk.volume - app.cfg.audio.volumeStep) < 0) {
                 app.mk.volume = 0;
-                console.debug('setting volume to 0')
             } else {
-                console.log('volume down')
-                app.mk.volume = ((app.mk.volume * 100) - (app.cfg.audio.volumeStep * 100)) / 100
+                app.mk.volume = (Math.floor((app.mk.volume * 100)) - (app.cfg.audio.volumeStep * 100)) / 100
             }
         },
         volumeWheel(event) {

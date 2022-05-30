@@ -83,18 +83,22 @@ export class Store {
                     "P"
                 ],
                 "webRemote": [
+                    "CommandOrControl",
                     process.platform == "darwin" ? "Option" : "Alt",
                     "W"
                 ],
                 "audioSettings": [
+                    "CommandOrControl",
                     process.platform == "darwin" ? "Option" : "Alt",
                     "A"
                 ],
                 "pluginMenu": [
+                    "CommandOrControl",
                     process.platform == "darwin" ? "Option" : "Alt",
                     "P"
                 ],
                 "castToDevices": [
+                    "CommandOrControl",
                     process.platform == "darwin" ? "Option" : "Alt",
                     "C"
                 ],

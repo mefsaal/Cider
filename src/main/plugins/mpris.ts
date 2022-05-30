@@ -25,6 +25,8 @@ export default class mpris {
         "pause": "pause",
         "next": "next",
         "previous": "previous",
+        "shuffle": "toggleShuffle",
+        "repeat": "toggleRepeat"
     }
 
     /*******************************************************************************************
@@ -41,6 +43,15 @@ export default class mpris {
         mpris.utils.getWindow().webContents.executeJavaScript(`MusicKitInterop.${type}()`).catch(console.error)
     }
 
+    private static runMediaEvent2(type: string) {
+        console.debug(`[Plugin][${mpris.name}] ${type}.`);
+        mpris.utils.getWindow().webContents.executeJavaScript(`wsapi.${type}()`).catch(console.error);
+    }
+
+    private static runMediaEvent3(type: string) {
+        console.debug(`[Plugin][${mpris.name}] ${type}.`);
+        mpris.utils.getWindow().webContents.executeJavaScript(`wsapi.${type}()`).catch(console.error);
+    }
     /**
      * Blocks non-linux systems from running this plugin
      * @private
@@ -79,7 +90,16 @@ export default class mpris {
 
         for (const [key, value] of Object.entries(mpris.mprisEvents)) {
             player.on(key, function () {
+                if (key === 'shuffle') {
+                    mpris.runMediaEvent2(value)
+                }
+                else {
                 mpris.runMediaEvent(value)
+                }
+                if (key === 'repeat') {
+                    mpris.runMediaEvent3(value)
+                }
+
             });
         }
 
@@ -125,9 +145,21 @@ export default class mpris {
             case false: // Paused
                 mpris.player.playbackStatus = Player.PLAYBACK_STATUS_PAUSED;
                 break;
+            case false:
+                mpris.player.loopStatus = Player.LOOP_STATUS_NONE;
+                break;
+            case true:
+                mpris.player.loopStatus = Player.LOOP_STATUS_TRACK;
+                break;
+            case true:
+                mpris.player.loopStatus = Player.LOOP_STATUS_PLAYLIST;
+                break;
+            case true:
+                mpris.player.shuffle = Player.SHUFFLE;                    
             default:
                 mpris.player.playbackStatus = Player.PLAYBACK_STATUS_STOPPED;
-                break
+                break;
+            
         }
     }
 

@@ -21,6 +21,9 @@ const Events = {
         });
 
         document.addEventListener('keydown', async function (event) {
+            //Wheel
+            
+
             // CTRL + R
             if (event.keyCode === 82 && event.ctrlKey) {
                 event.preventDefault()

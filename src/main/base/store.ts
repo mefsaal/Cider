@@ -84,28 +84,45 @@ export class Store {
                 ],
                 "webRemote": [
                     "CommandOrControl",
-                    process.platform == "darwin" ? "Option" : "Alt",
+                    process.platform == "darwin" ? "Option" : "Shift",
                     "W"
                 ],
                 "audioSettings": [
                     "CommandOrControl",
-                    process.platform == "darwin" ? "Option" : "Alt",
+                    process.platform == "darwin" ? "Option" : "Shift",
                     "A"
                 ],
                 "pluginMenu": [
                     "CommandOrControl",
-                    process.platform == "darwin" ? "Option" : "Alt",
+                    process.platform == "darwin" ? "Option" : "Shift",
                     "P"
                 ],
                 "castToDevices": [
                     "CommandOrControl",
-                    process.platform == "darwin" ? "Option" : "Alt",
+                    process.platform == "darwin" ? "Option" : "Shift",
                     "C"
                 ],
                 "settings": [
                     "CommandOrControl", // Who the hell uses a different key for this? Fucking Option?
                     ","
                 ],
+                "zoomin": [
+                    "CommandOrControl",
+                    process.platform == "darwin" ? "+" : "numadd",
+                ],
+                "zoomout": [
+                    "CommandOrControl",
+                    process.platform == "darwin" ? "-" : "numsub",
+                ],
+                "zoomreset": [
+                    "CommandOrControl",
+                    process.platform == "darwin" ? "0" : "num0",
+                ],
+            /*  "toggleSidebar": [
+                    "CommandOrControl",
+                    process.platform == "darwin" ? "Option" : "Alt",
+                    "S"
+                ], */
                 "openDeveloperTools": [
                     "CommandOrControl",
                     "Shift",

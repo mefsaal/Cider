@@ -1681,6 +1681,7 @@ input[type="range"].web-slider.display--small::-webkit-slider-thumb {
 
 .lyric-line.active .verse.verse-active {
   opacity: 1;
+  transition: opacity 0.35s var(--appleEase);
 }
 
 .lyric-line:hover {
@@ -1706,7 +1707,7 @@ input[type="range"].web-slider.display--small::-webkit-slider-thumb {
   opacity: 1;
   transform: scale(1);
   /*background: var(--keyColor);*/
-  transition: transform 0.2s var(--appleEase);
+  transition: transform 0.2s var(--appleEase), opacity 0.35s var(--appleEase);
 }
 
 .lyric-line:not(.active) {

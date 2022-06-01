@@ -28,6 +28,7 @@ import * as os from "os";
 import wallpaper from "wallpaper";
 import * as AdmZip from "adm-zip";
 
+
 /**
  * @file Creates the BrowserWindow
  * @author CiderCollective
@@ -478,7 +479,7 @@ export class BrowserWindow {
             const impulseExternals = join(utils.getPath("externals"), "/impulses/")
             const impulseFile = join(impulseExternals, req.params.file)
             if(existsSync(impulseFile)) {
-                res.sendFile(impulseFile)                
+                res.sendFile(impulseFile)
             }else{
                 res.sendFile(join(utils.getPath('srcPath'), "./renderer/audio/impulses/" + req.params.file))
             }
@@ -1488,4 +1489,3 @@ export class BrowserWindow {
         console.log('remote broadcasted')
     }
 }
-

@@ -56,6 +56,7 @@ export class BrowserWindow {
                 "pages/library-songs",
                 "pages/library-albums",
                 "pages/library-artists",
+                "pages/library-recentlyadded",
                 "pages/browse",
                 "pages/groupings",
                 "pages/settings",
@@ -82,6 +83,7 @@ export class BrowserWindow {
                 "pages/zoo",
                 "pages/plugin-renderer",
                 "pages/keybinds",
+                "pages/oobe",
                 "components/mediaitem-artwork",
                 "components/artwork-material",
                 "components/menu-panel",
@@ -118,6 +120,11 @@ export class BrowserWindow {
                 "components/inline-collection-list",
             ],
             appRoutes: [
+                {
+                    page: "library-recentlyadded",
+                    component: `<cider-recentlyadded></cider-recentlyadded>`,
+                    condition: "page == 'library-recentlyadded'"
+                },
                 {
                     page: "plugin-renderer",
                     component: `<plugin-renderer></plugin-renderer>`,

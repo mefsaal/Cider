@@ -510,11 +510,6 @@ const app = new Vue({
         navigateForward() {
             history.forward()
         },
-        getHTMLStyle() {
-			if (app.cfg.vissual.uiScale !=1) {
-			ipcRenderer.send("setScreenScale", app.cfg.visual.uiScale);
-            }            
-        },
         resetState() {
             this.menuPanel.visible = false;
             app.selectedMediaItems = [];

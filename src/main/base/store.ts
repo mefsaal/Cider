@@ -217,7 +217,10 @@ export class Store {
                 "windowLayout": "default"
             },
             "windowControlPosition": 0, // 0 default right
-            "nativeTitleBar": false
+            "nativeTitleBar": false,
+            "windowColor": "#000000",
+            "customAccentColor": false,
+            "accentColor": "#fc3c44"
         },
         "lyrics": {
             "enable_mxm": false,

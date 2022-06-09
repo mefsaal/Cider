@@ -916,26 +916,28 @@ const app = new Vue({
                 }
                 this.currentSongInfo = a
 
-                try {
-                    if (app.mk.nowPlayingItem.flavor.includes("64")) {
-                        if (localStorage.getItem("playingBitrate") !== "64") {
-                            localStorage.setItem("playingBitrate", "64")
-                            CiderAudio.hierarchical_loading();
-                        }
-                    } else if (app.mk.nowPlayingItem.flavor.includes("256")) {
-                        if (localStorage.getItem("playingBitrate") !== "256") {
+                if (app.cfg.advanced.AudioContext) {
+                    try {
+                        if (app.mk.nowPlayingItem.flavor.includes("64")) {
+                            if (localStorage.getItem("playingBitrate") !== "64") {
+                                localStorage.setItem("playingBitrate", "64")
+                                CiderAudio.hierarchical_loading();
+                            }
+                        } else if (app.mk.nowPlayingItem.flavor.includes("256")) {
+                            if (localStorage.getItem("playingBitrate") !== "256") {
+                                localStorage.setItem("playingBitrate", "256")
+                                CiderAudio.hierarchical_loading();
+                            }
+                        } else {
                             localStorage.setItem("playingBitrate", "256")
                             CiderAudio.hierarchical_loading();
                         }
-                    } else {
+                    } catch (e) {
                         localStorage.setItem("playingBitrate", "256")
                         CiderAudio.hierarchical_loading();
                     }
-                } catch (e) {
-                    localStorage.setItem("playingBitrate", "256")
-                    CiderAudio.hierarchical_loading();
                 }
-
+                
                 if (app.cfg.audio.normalization) {
                     // get unencrypted audio previews to get SoundCheck's normalization tag
                     try {
@@ -2682,7 +2684,7 @@ const app = new Vue({
                     "include[songs]": "artists",
                     "include[music-videos]": "artists",
                     "fields[albums]": ["artistName", "artistUrl", "artwork", "contentRating", "editorialArtwork", "editorialVideo", "name", "playParams", "releaseDate", "url"],
-                    "fields[artists]": ["name", "url"],
+                    "fields[artists]": ["name", "url", "artwork"],
                     "extend[stations]": ["airDate", "supportsAirTimeUpdates"],
                     "meta[stations]": "inflectionPoints",
                     types: "artists,albums,editorial-items,library-albums,library-playlists,music-movies,music-videos,playlists,stations,uploaded-audios,uploaded-videos,activities,apple-curators,curators,tv-shows,social-upsells",

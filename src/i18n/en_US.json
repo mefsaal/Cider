@@ -203,6 +203,8 @@
   "term.zoomout" : "Zoom Out",
   "term.zoomreset" : "Reset Zoom",
   "term.fullscreen" : "Fullscreen",
+  "home.syncFavorites": "Sync Favorites",
+  "home.syncFavorites.gettingArtists": "Getting Favorited Artists...",
   "home.title": "Home",
   "home.recentlyPlayed": "Recently Played",
   "home.recentlyAdded": "Recently Added",

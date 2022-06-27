@@ -21,17 +21,17 @@
                     <div class="input-container mini">
                         {{$root.cfg.audio.equalizer.vibrantBass}}
                         <input tabindex="0" type="range" class="eq-slider mini" orient="vertical" min="-15" max="15" step="1" v-model="$root.cfg.audio.equalizer.vibrantBass" @change="changeVibrantBass()">
-                        Vibrant Bass
+                        {{$root.getLz('preset.vibrantBass')}}
                     </div>
                     <div class="input-container mini">
                         {{$root.cfg.audio.equalizer.mix}}
                         <input tabindex="0" type="range" class="eq-slider mini" orient="vertical" min="0" max="2" step="0.1" v-model="$root.cfg.audio.equalizer.mix" @change="changeMix()">
-                        Mix
+                        {{$root.getLz('preset.mix')}}
                     </div>
                     <div class="input-container header mini">
-                        Gain
+                        {{$root.getLz('preset.gain')}}
                         <input type="range" class="eq-slider" orient="vertical" min="-12" max="12" step="0.1" >
-                        <div class="freq-header">Freq</div>
+                        <div class="freq-header">{{$root.getLz('preset.freq')}}</div>
                         <div>Q</div>
                     </div>
                     <div class="input-container">
@@ -130,7 +130,7 @@
                 defaultPresets: [
                     {
                         'preset': 'default',
-                        'name': 'Default',
+                        'name': app.getLz('preset.default'),
                         'frequencies': [32, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000],
                         'gain': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         'Q': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -139,7 +139,7 @@
                         'userGenerated': false
                     }, {
                         'preset': 'boostAiriness',
-                        'name': 'Boost Airiness',
+                        'name': app.getLz('preset.boostAiriness'),
                         'frequencies': [1169, 1733, 5962, 8688, 14125, 18628, 18628, 19000, 19500, 20000],
                         'gain': [-1.41, 0.25, 3.33, 0.22, -0.53, 0.2, 3.64, 0, 0, 0],
                         'Q': [0.405, 2.102, 0.025, 2.5, 7.071, 1.768, 1.146, 1, 1, 1],
@@ -148,7 +148,7 @@
                         'userGenerated': false
                     }, {
                         'preset': 'acoustic',
-                        'name': 'Acoustic',
+                        'name': app.getLz('preset.acoustic'),
                         'frequencies': [32, 75, 125, 220, 700, 1000, 2000, 4000, 10000, 16000],
                         'gain': [0, -8, 0, -0.1, -3, 0, 0, 0, 4, 0],
                         'Q': [1, 0.2, 1, 2.0, 1.4, 1, 1, 1, 0.1, 1],
@@ -157,7 +157,7 @@
                         'userGenerated': false
                     }, {
                         'preset': 'clearVocal',
-                        'name': 'Clear Vocal',
+                        'name': app.getLz('preset.clearVocal'),
                         'frequencies': [20, 63, 125, 250, 400, 1000, 2000, 4000, 8000, 20000],
                         'gain': [-22, 0, 0, 0, -3, 0, 1.8, 0, 0, 3.5],
                         'Q': [0.3, 1, 1, 1, 2.0, 1, 0.7, 1, 1, 0.8],
@@ -166,7 +166,7 @@
                         'userGenerated': false
                     }, {
                         'preset': 'instrumentClarity',
-                        'name': 'Instrument Clarity',
+                        'name': app.getLz('preset.instrumentClarity'),
                         'frequencies': [20, 63, 155, 250, 500, 1000, 2000, 5000, 11000, 16000],
                         'gain': [-15, 0, -3, 0, 0, 0, 0, 3.1, 0, 0],
                         'Q': [0.5, 1, 2, 1, 1, 1, 1, 1.5, 0.1, 1],
@@ -175,7 +175,7 @@
                         'userGenerated': false
                     }, {
                         'preset': 'reduceHarshness',
-                        'name': 'Reduce Harshness',
+                        'name': app.getLz('preset.reduceHarshness'),
                         'frequencies': [32, 63, 125, 250, 500, 1128, 2000, 4057, 8000, 16000],
                         'gain': [0, 0, 0, 0, 0, 2, 0, -6.4, 0, 0],
                         'Q': [1, 1, 1, 1, 1, 2, 1, 1, 1, 1],
@@ -184,17 +184,16 @@
                         'userGenerated': false
                     }, {
                         'preset': 'smileyFace',
-                        'name': 'Smiley Face',
+                        'name': app.getLz('preset.smileyFace'),
                         'frequencies': [35, 63, 125, 250, 500, 800, 2000, 4000, 8000, 20000],
                         'gain': [5, 0, 0, 0, 0, -5, 0, 0, 0, 5],
                         'Q': [0.1, 1, 1, 1, 1, 0.6, 1, 1, 1, 0.2],
                         'mix': 1,
                         'vibrantBass': 0,
                         'userGenerated': false
-                    },
-                    {
+                    }, {
                         'preset': 'bassBoostSurgical',
-                        'name': 'Surgical Bass Boost',
+                        'name': app.getLz('preset.bassBoostSurgical'),
                         'frequencies': [32, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000],
                         'gain': [2.7, 2.2, 1.6, 1.4, 0.6, 0, 0, 0, 0, 0],
                         'Q': [1.4, 1.4, 1.4, 1.4, 1.4, 1, 1, 1, 1, 1],
@@ -203,7 +202,7 @@
                         'userGenerated': false
                     }, {
                         'preset': 'bassBoostClassic',
-                        'name': 'Classic Bass Boost',
+                        'name': app.getLz('preset.bassBoostClassic'),
                         'frequencies': [32, 63, 160, 250, 500, 1000, 2000, 3500, 8000, 20000],
                         'gain': [2.7, 2.2, 1.6, 1.4, 0.6, 0, 0, 0, 0, 0],
                         'Q': [0.7, 0.7, 0.7, 0.7, 0.7, 1, 1, 1, 1, 1],

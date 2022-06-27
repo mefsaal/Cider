@@ -325,11 +325,7 @@ const app = new Vue({
             let advancedTooltip = this.cfg.audio.dBSPL ? (Number(this.cfg.audio.dBSPLcalibration) + (Math.log10(this.mk.volume) * 20)).toFixed(2) + ' dB SPL' : (Math.log10(this.mk.volume) * 20).toFixed(2) + ' dBFS'
             return this.cfg.audio.advanced ? advancedTooltip : (this.mk.volume * 100).toFixed(0) + '%'
         },
-        mainMenuVisibility(val, isContextMenu) {
-            if (this.chrome.sidebarCollapsed && !isContextMenu) {
-                this.chrome.sidebarCollapsed = false
-                return
-            }
+        mainMenuVisibility(val) {
             if (val) {
                 (this.mk.isAuthorized) ? this.chrome.menuOpened = !this.chrome.menuOpened : false;
                 if (!this.mk.isAuthorized) {
@@ -439,6 +435,9 @@ const app = new Vue({
 
                 }
             })
+        },
+        quit() {
+            ipcRenderer.invoke("quit-app")
         },
         async openAppleMusicURL(url) {
             let properties = MusicKit.formattedMediaURL(url)
@@ -869,6 +868,7 @@ const app = new Vue({
                         try {
                             //CiderAudio.audioNodes.gainNode.gain.value = (Math.min(Math.pow(10, (replaygain.gain / 20)), (1 / replaygain.peak)))
                             CiderAudio.audioNodes.gainNode.gain.value = gain
+                            CiderAudio.hierarchical_loading();
                         } catch (e) {
                         }
                     }
@@ -938,27 +938,23 @@ const app = new Vue({
                     self.$refs.queue.updateQueue();
                 }
                 this.currentSongInfo = a
+                if (this.currentSongInfo === null || this.currentSongInfo === undefined) {return;} // EVIL EMPTY OBJECTS BE GONE
 
+                console.debug("songinfo: " + JSON.stringify(a))
                 if (app.cfg.advanced.AudioContext) {
                     try {
                         if (app.mk.nowPlayingItem.flavor.includes("64")) {
-                            if (localStorage.getItem("playingBitrate") !== "64") {
-                                localStorage.setItem("playingBitrate", "64")
-                                CiderAudio.hierarchical_loading();
-                            }
+                            localStorage.setItem("playingBitrate", "64")
                         } else if (app.mk.nowPlayingItem.flavor.includes("256")) {
-                            if (localStorage.getItem("playingBitrate") !== "256") {
-                                localStorage.setItem("playingBitrate", "256")
-                                CiderAudio.hierarchical_loading();
-                            }
+                            localStorage.setItem("playingBitrate", "256")
                         } else {
                             localStorage.setItem("playingBitrate", "256")
-                            CiderAudio.hierarchical_loading();
                         }
                     } catch (e) {
                         localStorage.setItem("playingBitrate", "256")
-                        CiderAudio.hierarchical_loading();
                     }
+                    if (!app.cfg.audio.normalization) {CiderAudio.hierarchical_loading();}
+
                 }
 
                 if (app.cfg.audio.normalization) {
@@ -973,14 +969,17 @@ const app = new Vue({
                             app.mk.api.v3.music(`/v1/catalog/${app.mk.storefrontId}/songs/${app.mk.nowPlayingItem?._songId ?? (app.mk.nowPlayingItem["songId"] ?? app.mk.nowPlayingItem.relationships.catalog.data[0].id)}`).then((response) => {
                                 previewURL = response.data.data[0].attributes.previews[0].url
                                 if (previewURL)
+                                    console.debug("[Cider][MaikiwiSoundCheck] previewURL response.data.data[0].attributes.previews[0].url: " + previewURL)
                                     ipcRenderer.send('getPreviewURL', previewURL)
                             })
                         } else {
                             if (previewURL)
+                                console.debug("[Cider][MaikiwiSoundCheck] previewURL in app.mk.nowPlayingItem.previewURL: " + previewURL)
                                 ipcRenderer.send('getPreviewURL', previewURL)
                         }
 
                     } catch (e) {
+                        if (e instanceof TypeError === false) {console.debug("[Cider][MaikiwiSoundCheck] normalizer function err: " + e)}
                     }
                 }
 
@@ -1174,7 +1173,7 @@ const app = new Vue({
             }
         },
         unauthorize() {
-            bootbox.confirm(app.getLz('term.confirmLogout'), function (result) {
+            this.confirm(app.getLz('term.confirmLogout'), function (result) {
                 if (result) {
                     app.mk.unauthorize()
                     document.location.reload()
@@ -1452,6 +1451,12 @@ const app = new Vue({
                     action: () => {
                         this.newPlaylistFolder()
                     }
+                },
+                {
+                    name: app.getLz("action.refresh"),
+                    action: ()=>{
+                        this.refreshPlaylists()
+                    }
                 }
                 ]
             }
@@ -1549,22 +1554,24 @@ const app = new Vue({
         },
         deletePlaylist(id) {
             let self = this
-            if (confirm(app.getLz('term.deletePlaylist'))) {
-                app.mk.api.v3.music(`/v1/me/library/playlists/${id}`, {}, {
-                    fetchOptions: {
-                        method: "DELETE"
-                    }
-                }).then(res => {
-                    // remove this playlist from playlists.listing if it exists
-                    let found = self.playlists.listing.find(item => item.id == id)
-                    if (found) {
-                        self.playlists.listing.splice(self.playlists.listing.indexOf(found), 1)
-                    }
-                    setTimeout(() => {
-                        app.refreshPlaylists(false, false);
-                    }, 8000);
-                })
-            }
+            this.confirm(app.getLz('term.deletePlaylist'), (ok) => {
+                if (ok) {
+                    app.mk.api.v3.music(`/v1/me/library/playlists/${id}`, {}, {
+                        fetchOptions: {
+                            method: "DELETE"
+                        }
+                    }).then(res => {
+                        // remove this playlist from playlists.listing if it exists
+                        let found = self.playlists.listing.find(item => item.id == id)
+                        if (found) {
+                            self.playlists.listing.splice(self.playlists.listing.indexOf(found), 1)
+                        }
+                        setTimeout(() => {
+                            app.refreshPlaylists(false, false);
+                        }, 8000);
+                    })
+                }
+            });
         },
         /**
          * @param {string} url, href for the initial request
@@ -4618,6 +4625,29 @@ const app = new Vue({
                     let src = sources[0];
                     app.mk._services.mediaItemPlayback._currentPlayer._playAssetURL(src, false)
                 }
+            }
+        },
+        confirm(message, callback) {
+            bootbox.confirm(this.getBootboxParams(null, message, callback));
+        },
+        prompt(title, callback) {
+            bootbox.prompt(this.getBootboxParams(title, null, callback));
+        },
+        getBootboxParams(title, message, callback) {
+            return {
+                title: title,
+                message: message,
+                buttons: {
+                    confirm: {
+                        label: app.getLz('dialog.ok'),
+                    },
+                    cancel: {
+                        label:  app.getLz('dialog.cancel'),
+                    },
+                },
+                callback: function (result) {
+                    if (callback) callback(result);
+                },
             }
         }
     }

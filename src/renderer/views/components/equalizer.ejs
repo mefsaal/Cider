@@ -290,7 +290,7 @@
                 })
             },
             close() {
-                app.resetState()
+                app.modals.equalizer = false
             },
             changeVibrantBass() {
                 if (app.cfg.audio.equalizer.vibrantBass !== '0') {

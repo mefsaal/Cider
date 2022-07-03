@@ -24,7 +24,7 @@ const CiderAudio = {
                 CiderAudio.connectContext(document.getElementById("apple-music-player"), 0);
 
                 cb();
-                clearInterval(searchInt);
+                clearInterval(searchInt);                
             }
         }, 1000);
     },
@@ -49,7 +49,8 @@ const CiderAudio = {
     },
     connectContext: function (mediaElem) {
         if (!CiderAudio.context) {
-            CiderAudio.context = new window.AudioContext({ sampleRate: 96000 }); // Don't ever remove the sample rate arg. Ask Maikiwi.
+            CiderAudio.context = new window.AudioContext({ sampleRate: 96000, latencyHint: "playback"}); // Don't ever remove the sample rate arg. Ask Maikiwi.
+            app.lyricOffset = CiderAudio.context.baseLatency
         }
         if (!CiderAudio.source) {
             CiderAudio.source = CiderAudio.context.createMediaElementSource(mediaElem);
@@ -720,18 +721,12 @@ const CiderAudio = {
                                     let bufferedImpulse = await impulseData.arrayBuffer();
                                     CiderAudio.audioNodes.llpw[0].buffer = await CiderAudio.context.decodeAudioData(bufferedImpulse);
                                 });
-                                console.debug("[Cider][Audio] CAP Adaptive - 256kbps_2_48k");
+                                console.debug("[Cider][Audio] CAP Adaptive - 256kbps");
                                     
                                 break;
                             default:
-                                CiderAudio.audioNodes.llpw[0] = CiderAudio.context.createConvolver(); CiderAudio.audioNodes.llpw[0].normalize = false;
-                                CiderAudio.audioNodes.llpw[1] = CiderAudio.context.createGain(); CiderAudio.audioNodes.llpw[1].gain.value = 2.37; // Post Gain Compensation
-                                CiderAudio.audioNodes.llpw[0].connect(CiderAudio.audioNodes.llpw[1]);
-                                fetch('./cideraudio/impulses/CAP_256_FINAL_48k.wav').then(async (impulseData) => {
-                                    let bufferedImpulse = await impulseData.arrayBuffer();
-                                    CiderAudio.audioNodes.llpw[0].buffer = await CiderAudio.context.decodeAudioData(bufferedImpulse);
-                                });
-                                console.debug("[Cider][Audio] CAP Adaptive - CONFIG FALLBACK - 256kbps_2_48k");
+                                CiderAudio.audioNodes.llpw[0] = CiderAudio.context.createGain(); CiderAudio.audioNodes.llpw[0].gain.value = 1
+                                console.debug("[Cider][Audio] CAP Disabled (Passthrough) : Non-Lossy Bitrate.");
 
                                 break;
                         }

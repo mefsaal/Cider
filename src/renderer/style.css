@@ -16392,6 +16392,21 @@ input[type="range"].web-slider.display--small::-webkit-slider-thumb {
   margin: 0px 16px 0px 0px;
   pointer-events: none;
 }
+.about-page .sponsorBtn.githubBtn {
+  background-color: #211F1F;
+}
+.about-page .sponsorBtn.kofiBtn {
+  background-color: #FBAA19;
+}
+.about-page .sponsorBtn.opencollectiveBtn {
+  background-color: #7fadf2;
+}
+.about-page .sponsorBtn.discordBtn {
+  background-color: #5865F2;
+}
+.about-page .sponsorBtn.twitterBtn {
+  background-color: #1D9BF0;
+}
 .sidebar-playlist .folder-button-active {
   background: rgba(255, 255, 255, 0.12);
 }
@@ -17809,6 +17824,12 @@ body.no-gpu .lyric-line:hover::after {
   object-fit: contain;
   overflow-x: hidden;
   overflow-y: hidden;
+}
+.moreinfo-modal .modal-window {
+  height: max-content !important;
+}
+.moreinfo-modal .modal-window .modal-content {
+  height: max-content !important;
 }
 .equalizer-panel .modal-window {
   height: 330px;

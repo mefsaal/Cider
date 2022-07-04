@@ -331,3 +331,4 @@ savedconfig/session.json
 savedconfig/window-state.json
 src/main/base/sample.json
 src/renderer/style.css
+./src/renderer/style.css

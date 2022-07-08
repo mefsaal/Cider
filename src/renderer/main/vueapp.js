@@ -12,6 +12,7 @@ const app = new Vue({
         ipcRenderer: ipcRenderer,
         cfg: ipcRenderer.sendSync("getStore"),
         isDev: ipcRenderer.sendSync("is-dev"),
+        clientPort: ipcRenderer.sendSync("get-port"),
         drawertest: false,
         platform: "",
         mk: {},
@@ -705,6 +706,9 @@ const app = new Vue({
             } catch (err) {
             }
 
+            // Used to get a scale factor for the window for CSS scaling
+            window.addEventListener("resize", e =>  this.setWindowScaleFactor())
+            this.setWindowScaleFactor()
             this.mk._bag.features['seamless-audio-transitions'] = this.cfg.audio.seamless_audio
             this.mk._bag.features["broadcast-radio"] = true
             this.mk._services.apiManager.store.storekit._restrictedEnabled = false
@@ -1090,6 +1094,18 @@ const app = new Vue({
             }
 
             ipcRenderer.invoke("scanLibrary")
+        },
+        setWindowScaleFactor() {
+            let scale = window.devicePixelRatio * window.innerWidth / 1280 * window.innerHeight / 720
+            let desiredScale = clamp(parseFloat(app.cfg.visual.maxElementScale == -1 ? 1.5 : app.cfg.visual.maxElementScale), 1, 1.5)
+            app.$store.state.windowRelativeScale = scale
+            if(scale <= 1) {
+                scale = 1
+            }else if(scale >= desiredScale) {
+                scale = desiredScale
+            }
+            document.documentElement.style
+                    .setProperty('--windowRelativeScale', scale);
         },
         showFoo(querySelector, time) {
             clearTimeout(this.idleTimer);
@@ -2009,7 +2025,7 @@ const app = new Vue({
                     params["fields[artists]"] = "name,url"
                     params["omit[resource]"] = "autos"
                     params["meta[albums:tracks]"] = 'popularity'
-                    params["fields[albums]"] = "artistName,artistUrl,artwork,contentRating,editorialArtwork,editorialNotes,editorialVideo,name,playParams,releaseDate,url,copyright"
+                    params["fields[albums]"] = "artistName,artistUrl,artwork,contentRating,editorialArtwork,editorialNotes,editorialVideo,name,playParams,releaseDate,url,copyright,genreNames"
                 }
                 if (kind.includes("playlist") || kind.includes("album")) {
                     app.page = (kind) + "_" + (id);
@@ -3038,7 +3054,10 @@ const app = new Vue({
             const track = encodeURIComponent((this.mk.nowPlayingItem != null) ? this.mk.nowPlayingItem.title ?? '' : '');
             const artist = encodeURIComponent((this.mk.nowPlayingItem != null) ? this.mk.nowPlayingItem.artistName ?? '' : '');
             const time = encodeURIComponent((this.mk.nowPlayingItem != null) ? (Math.round((this.mk.nowPlayingItem.attributes["durationInMillis"] ?? -1000) / 1000) ?? -1) : -1);
-            const id = encodeURIComponent((this.mk.nowPlayingItem != null) ? app.mk.nowPlayingItem._songId ?? (app.mk.nowPlayingItem["songId"] ?? '') : '');
+            let id = null;
+            if (this.mk.nowPlayingItem != null && app.mk.nowPlayingItem.localFilesMetadata != null) {const id = encodeURIComponent('')}
+            else {id = encodeURIComponent((this.mk.nowPlayingItem != null) ? (app.mk.nowPlayingItem._songId) ?? (app.mk.nowPlayingItem["songId"] ?? '') : '');}
+            
             let lrcfile = "";
             let richsync = [];
             const lang = app.cfg.lyrics.mxm_language //  translation language
@@ -3046,67 +3065,13 @@ const app = new Vue({
                 return Math.random().toString(36).replace(/[^a-z]+/g, '').slice(2, 10);
             }
 
-            /* get token */
-            function getToken(mode, track, artist, songid, lang, time, id) {
-                if (attempt > 2) {
-                    app.loadNeteaseLyrics();
-                    // app.loadAMLyrics();
-                } else {
-                    attempt = attempt + 1;
-                    let url = "https://apic-desktop.musixmatch.com/ws/1.1/token.get?app_id=web-desktop-app-v1.0&t=" + revisedRandId();
-                    let req = new XMLHttpRequest();
-                    req.overrideMimeType("application/json");
-                    req.open('GET', url, true);
-                    req.setRequestHeader("authority", "apic-desktop.musixmatch.com");
-                    req.onload = function () {
-                        try {
-                            let jsonResponse = JSON.parse(this.responseText);
-                            let status2 = jsonResponse["message"]["header"]["status_code"];
-                            if (status2 == 200) {
-                                let token = jsonResponse["message"]["body"]["user_token"] ?? '';
-                                if (token != "" && token != "UpgradeOnlyUpgradeOnlyUpgradeOnlyUpgradeOnly") {
-                                    console.debug('200 token', mode);
-                                    // token good
-                                    app.mxmtoken = token;
 
-                                    if (mode == 1) {
-                                        getMXMSubs(track, artist, app.mxmtoken, lang, time, id);
-                                    } else {
-                                        getMXMTrans(songid, lang, app.mxmtoken);
-                                    }
-                                } else {
-                                    console.debug('fake 200 token');
-                                    getToken(mode, track, artist, songid, lang, time)
-                                }
-                            } else {
-                                // console.log('token 4xx');
-                                getToken(mode, track, artist, songid, lang, time)
-                            }
-                        } catch (e) {
-                            console.log('error');
-                            app.loadQQLyrics();
-                            //app.loadAMLyrics();
-                        }
-                    };
-                    req.onerror = function () {
-                        console.log('error');
-                        app.loadQQLyrics();
-                        // app.loadAMLyrics();
-                    };
-                    req.send();
-                }
-            }
-
-            function getMXMSubs(track, artist, token, lang, time, id) {
-                let usertoken = encodeURIComponent(token);
-                let richsyncQuery = (app.cfg.lyrics.mxm_karaoke) ? "&optional_calls=track.richsync" : ""
-                let timecustom = (!time || (time && time < 0)) ? '' : `&f_subtitle_length=${time}&q_duration=${time}&f_subtitle_length_max_deviation=40`;
-                let itunesid = (id && id != "") ? `&track_itunes_id=${id}` : '';
-                let url = "https://apic-desktop.musixmatch.com/ws/1.1/macro.subtitles.get?format=json&namespace=lyrics_richsynched" + richsyncQuery + "&subtitle_format=lrc&q_artist=" + artist + "&q_track=" + track + itunesid + "&usertoken=" + usertoken + timecustom + "&app_id=web-desktop-app-v1.0&t=" + revisedRandId();
+            function getMXMSubs(track, artist, lang, time, id) {
+                let richsyncQuery = app.cfg.lyrics.mxm_karaoke
+                let itunesid = (id && id != "") ? id : ''; // Mode 1 -> Subs
+                let url = "https://api.cider.sh/v1/lyrics?" + "mode=1" + "&richsyncQuery=" + richsyncQuery + "&track=" + track + "&artist=" + artist + "&songID=" + itunesid + "&source=mxm" + "&lang=" + lang + "&time=" + time;
                 let req = new XMLHttpRequest();
                 req.overrideMimeType("application/json");
-                req.open('GET', url, true);
-                req.setRequestHeader("authority", "apic-desktop.musixmatch.com");
                 req.onload = function () {
                     try {
                         let jsonResponse = JSON.parse(this.responseText);
@@ -3133,7 +3098,7 @@ const app = new Vue({
                                     // app.loadAMLyrics()
                                 } else {
                                     if (richsync == [] || richsync.length == 0) {
-                                        console.log("ok");
+                                        console.log("musixmatch worki");
                                         // process lrcfile to json here
                                         app.lyricsMediaItem = lrcfile
                                         let u = app.lyricsMediaItem.split(/[\r\n]/);
@@ -3176,7 +3141,7 @@ const app = new Vue({
                                     }
                                     if (lrcfile != null && lrcfile != '') {
                                         // load translation
-                                        getMXMTrans(id, lang, token);
+                                        getMXMTrans(id, lang);
                                     } else {
                                         // app.loadAMLyrics()
                                         app.loadQQLyrics();
@@ -3187,11 +3152,9 @@ const app = new Vue({
                                 app.loadQQLyrics();
                                 //  app.loadAMLyrics()
                             }
-                        } else { //4xx rejected
-                            getToken(1, track, artist, '', lang, time);
-                        }
+                        } 
                     } catch (e) {
-                        console.log(e);
+                        console.error(e);
                         app.loadQQLyrics();
                         //app.loadAMLyrics()
                     }
@@ -3201,23 +3164,21 @@ const app = new Vue({
                     console.log('error');
                     // app.loadAMLyrics();
                 };
+                req.open('POST', url, true);
                 req.send();
             }
 
-            function getMXMTrans(id, lang, token) {
-                if (lang != "disabled" && id != '') {
-                    let usertoken = encodeURIComponent(token);
-                    let url2 = "https://apic-desktop.musixmatch.com/ws/1.1/crowd.track.translations.get?translation_fields_set=minimal&selected_language=" + lang + "&track_id=" + id + "&comment_format=text&part=user&format=json&usertoken=" + usertoken + "&app_id=web-desktop-app-v1.0&t=" + revisedRandId();
+            function getMXMTrans(lang, id) {
+                if (lang != "disabled" && id != '') { // Mode 2 -> Trans
+                    let url2 = "https://api.cider.sh/v1/lyrics?" + "mode=2" + "&richsyncQuery=false" + "&songID=" + id + "&source=mxm" + "&lang=" + lang + "&time=" + time;
                     let req2 = new XMLHttpRequest();
                     req2.overrideMimeType("application/json");
-                    req2.open('GET', url2, true);
-                    req2.setRequestHeader("authority", "apic-desktop.musixmatch.com");
                     req2.onload = function () {
                         try {
                             let jsonResponse2 = JSON.parse(this.responseText);
                             console.log(jsonResponse2);
                             let status2 = jsonResponse2["message"]["header"]["status_code"];
-                            if (status2 == 200) {
+                            if (status2 === 200) {
                                 try {
                                     let preTrans = []
                                     let u = app.lyrics;
@@ -3237,23 +3198,19 @@ const app = new Vue({
                                 } catch (e) {
                                     /// not found trans -> ignore
                                 }
-                            } else { //4xx rejected
-                                getToken(2, '', '', id, lang, '');
-                            }
+                            } 
                         } catch (e) {
                         }
                     }
+                    req2.open('POST', url2, true);
                     req2.send();
                 }
 
             }
 
             if (track != "" & track != "No Title Found") {
-                if (app.mxmtoken != null && app.mxmtoken != '') {
-                    getMXMSubs(track, artist, app.mxmtoken, lang, time, id)
-                } else {
-                    getToken(1, track, artist, '', lang, time);
-                }
+                getMXMSubs(track, artist, lang, time, id)
+                getMXMTrans(track, artist, lang, time, id)
             }
         },
         loadNeteaseLyrics() {
@@ -3995,9 +3952,8 @@ const app = new Vue({
                         this.currentArtUrl = this.mk.nowPlayingItem._assets[0].artworkURL
                     }
                     try {
-                        document.querySelector('.app-playback-controls .artwork').style.setProperty('--artwork', `url("${this.currentArtUrl}")`);
-                    } catch (e) {
-                    }
+                        // document.querySelector('.app-playback-controls .artwork').style.setProperty('--artwork', `url("${this.currentArtUrl}")`);
+                    } catch (e) {}                               
                 } else {
                     let data = await this.mk.api.v3.music(`/v1/me/library/songs/${this.mk.nowPlayingItem.id}`);
                     data = data.data.data[0];
@@ -4009,14 +3965,14 @@ const app = new Vue({
                         }
                         ipcRenderer.send('updateRPCImage', this.currentArtUrl ?? '');
                         try {
-                            document.querySelector('.app-playback-controls .artwork').style.setProperty('--artwork', `url("${this.currentArtUrl}")`);
+                            // document.querySelector('.app-playback-controls .artwork').style.setProperty('--artwork', `url("${this.currentArtUrl}")`);
                         } catch (e) {
                         }
                     } else {
                         this.currentArtUrlRaw = ''
                         this.currentArtUrl = '';
                         try {
-                            document.querySelector('.app-playback-controls .artwork').style.setProperty('--artwork', `url("${this.currentArtUrl}")`);
+                            // document.querySelector('.app-playback-controls .artwork').style.setProperty('--artwork', `url("${this.currentArtUrl}")`);
                         } catch (e) {
                         }
                     }

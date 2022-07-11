@@ -919,13 +919,19 @@ const app = new Vue({
                 }
             });
 
+            this.mk.addEventListener(MusicKit.Events.playbackProgressDidChange, () => {
+                if (self.mk.currentPlaybackProgress === (app.cfg.connectivity.lastfm.scrobble_after / 100)) {
+                    ipcRenderer.send('lastfm:scrobbleTrack', MusicKitInterop.getAttributes());
+                }
+            })
+
             this.mk.addEventListener(MusicKit.Events.playbackStateDidChange, (event) => {
                 ipcRenderer.send('wsapi-updatePlaybackState', wsapi.getAttributes());
                 document.body.setAttribute("playback-state", event.state == 2 ? "playing" : "paused")
             })
 
             this.mk.addEventListener(MusicKit.Events.playbackTimeDidChange, (a) => {
-                self.lyriccurrenttime = self.mk.currentPlaybackTime + app.lyricOffset
+                // self.lyriccurrenttime = self.mk.currentPlaybackTime - app.lyricOffset
                 this.currentSongInfo = a
                 self.playerLCD.playbackDuration = (self.mk.currentPlaybackTime)
                 // wsapi
@@ -1960,7 +1966,7 @@ const app = new Vue({
                         })
 
                         return;
-                    } else if(item.attributes.link.url.includes("viewFeature")) {
+                    } else if (item.attributes.link.url.includes("viewFeature")) {
                         const params = new Proxy(new URLSearchParams(new URL(item.attributes.link.url).search), {
                             get: (searchParams, prop) => searchParams.get(prop),
                         });
@@ -1971,7 +1977,6 @@ const app = new Vue({
                                 app.routeView(item)
                             }
                         )
-
                     } else {
                         window.open(item.attributes.link.url)
                     }
@@ -2012,7 +2017,26 @@ const app = new Vue({
                 });
                 window.location.hash = `${kind}/${id}`
                 document.querySelector("#app-content").scrollTop = 0
-            } else if (!kind.toString().includes("radioStation") && !kind.toString().includes("song") && !kind.toString().includes("musicVideo") && !kind.toString().includes("uploadedVideo") && !kind.toString().includes("music-movie")) {
+            } else if (kind = "social-profiles") {
+                app.page = (kind) + "_" + (id);
+                app.mk.api.v3.music(
+                    `/v1/social/${app.mk.storefrontId}/social-profiles/${id}`,
+                    {include:"shared-playlists"}).then(
+                        (data) => {
+                            console.log(data)
+                            app.showingPlaylist = data.data?.data[0]
+                            window.location.hash = `${kind}/${id}`
+                            document.querySelector("#app-content").scrollTop = 0
+                        }
+                    )
+                // app.getTypeFromID((kind), (id), (isLibrary), {
+                //     extend: "editorialVideo",
+                //     include: 'grouping,playlists',
+                //     views: 'top-releases,latest-releases,top-artists'
+                // });
+
+            }
+            else if (!kind.toString().includes("radioStation") && !kind.toString().includes("song") && !kind.toString().includes("musicVideo") && !kind.toString().includes("uploadedVideo") && !kind.toString().includes("music-movie")) {
                 let params = {
                     extend: "offers,editorialVideo",
                     "views": "appears-on,more-by-artist,related-videos,other-versions,you-might-also-like,video-extras,audio-extras",
@@ -3054,7 +3078,7 @@ const app = new Vue({
             const track = encodeURIComponent((this.mk.nowPlayingItem != null) ? this.mk.nowPlayingItem.title ?? '' : '');
             const artist = encodeURIComponent((this.mk.nowPlayingItem != null) ? this.mk.nowPlayingItem.artistName ?? '' : '');
             const time = encodeURIComponent((this.mk.nowPlayingItem != null) ? (Math.round((this.mk.nowPlayingItem.attributes["durationInMillis"] ?? -1000) / 1000) ?? -1) : -1);
-            let id = null;
+            let id = null; let vanity_id = null;
             if (this.mk.nowPlayingItem != null && app.mk.nowPlayingItem.localFilesMetadata != null) {const id = encodeURIComponent('')}
             else {id = encodeURIComponent((this.mk.nowPlayingItem != null) ? (app.mk.nowPlayingItem._songId) ?? (app.mk.nowPlayingItem["songId"] ?? '') : '');}
             
@@ -3079,11 +3103,13 @@ const app = new Vue({
                         let status1 = jsonResponse["message"]["header"]["status_code"];
 
                         if (status1 == 200) {
-                            let id = '';
+                            let id, songLang = '';
                             try {
                                 if (jsonResponse["message"]["body"]["macro_calls"]["matcher.track.get"]["message"]["header"]["status_code"] == 200 && jsonResponse["message"]["body"]["macro_calls"]["track.subtitles.get"]["message"]["header"]["status_code"] == 200) {
                                     id = jsonResponse["message"]["body"]["macro_calls"]["matcher.track.get"]["message"]["body"]["track"]["track_id"] ?? '';
                                     lrcfile = jsonResponse["message"]["body"]["macro_calls"]["track.subtitles.get"]["message"]["body"]["subtitle_list"][0]["subtitle"]["subtitle_body"];
+                                    vanity_id = jsonResponse["message"]["body"]["macro_calls"]["matcher.track.get"]["message"]["body"]["track"]["commontrack_vanity_id"];
+                                    songLang = jsonResponse["message"]["body"]["macro_calls"]["track.lyrics.get"]["message"]["body"]["lyrics"]["lyrics_language_description"];
 
                                     try {
                                         let lrcrich = jsonResponse["message"]["body"]["macro_calls"]["track.richsync.get"]["message"]["body"]["richsync"]["richsync_body"];
@@ -3139,13 +3165,12 @@ const app = new Vue({
                                             });
                                         app.lyrics = preLrc;
                                     }
-                                    if (lrcfile != null && lrcfile != '') {
-                                        // load translation
-                                        getMXMTrans(id, lang);
-                                    } else {
-                                        // app.loadAMLyrics()
-                                        app.loadQQLyrics();
+                                  
+                                    // Load translation
+                                    if (songLang.toLowerCase() !== lang){
+                                        getMXMTrans(lang, vanity_id);
                                     }
+
                                 }
                             } catch (e) {
                                 console.log(e);
@@ -3168,49 +3193,55 @@ const app = new Vue({
                 req.send();
             }
 
-            function getMXMTrans(lang, id) {
-                if (lang != "disabled" && id != '') { // Mode 2 -> Trans
-                    let url2 = "https://api.cider.sh/v1/lyrics?" + "mode=2" + "&richsyncQuery=false" + "&songID=" + id + "&source=mxm" + "&lang=" + lang + "&time=" + time;
-                    let req2 = new XMLHttpRequest();
-                    req2.overrideMimeType("application/json");
-                    req2.onload = function () {
-                        try {
-                            let jsonResponse2 = JSON.parse(this.responseText);
-                            console.log(jsonResponse2);
-                            let status2 = jsonResponse2["message"]["header"]["status_code"];
-                            if (status2 === 200) {
-                                try {
-                                    let preTrans = []
-                                    let u = app.lyrics;
-                                    let translation_list = jsonResponse2["message"]["body"]["translations_list"];
-                                    if (translation_list.length > 0) {
-                                        for (var i = 0; i < u.length - 1; i++) {
-                                            preTrans[i] = ""
-                                            for (var trans_line of translation_list) {
-                                                if (u[i].line == " " + trans_line["translation"]["matched_line"] || u[i].line == trans_line["translation"]["matched_line"]) {
-                                                    u[i].translation = trans_line["translation"]["description"];
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        app.lyrics = u;
+            function getMXMTrans(lang, vanity_id) {
+                try { 
+                    if (lang != "disabled" && vanity_id != '') { // Mode 2 -> Trans
+                        fetch('https://www.musixmatch.com/lyrics/' + vanity_id +'/translation/' + lang, {
+                            method: 'GET',
+                            headers: {
+                                'Host': 'musixmatch.com',
+                                'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+                                'authority': "www.musixmatch.com"
+                            },
+                        })
+                            .then(async (res) => {
+                                if (res.status != 200) {return}
+                                let html = document.createElement('html'); html.innerHTML = await res.text()
+                                let lyric_isolated = html.querySelector("#site > div > div > div > main > div > div > div.mxm-track-lyrics-container > div.container > div > div > div > div.col-sm-12.col-md-10.col-ml-9.col-lg-9 > div.mxm-lyrics.translated > div.row > div.col-xs-12.col-sm-12.col-md-12.col-ml-12.col-lg-12")
+                                let raw_lines = lyric_isolated.getElementsByClassName("col-xs-6 col-sm-6 col-md-6 col-ml-6 col-lg-6")
+                                let applied = 0; 
+                                for (let i = 1; applied < app.lyrics.length; i+=2) { // Start on odd elements because even ones are original.
+                                    if (raw_lines[i].childNodes[0].childNodes[0].textContent.trim() == "") {i+=2;}
+                                    if (app.lyrics[applied].line.trim() == "") {applied+=1;}
+                                    if (app.lyrics[applied].line.trim() === raw_lines[i].childNodes[0].childNodes[0].textContent.trim().replace('′', "'")) {                           
+                                        // Do Nothing
+                                        applied +=1;
                                     }
-                                } catch (e) {
-                                    /// not found trans -> ignore
+                                    else  {                
+                                        if (app.lyrics[applied].line === "lrcInstrumental") { 
+                                            if (app.lyrics[applied+1].line.trim() === raw_lines[i].childNodes[0].childNodes[0].textContent.trim()) {                           
+                                                // Do Nothing
+                                                applied +=2;
+                                            }
+                                            else {
+                                                app.lyrics[applied+1].translation = raw_lines[i].childNodes[0].childNodes[0].textContent.trim();  
+                                                applied +=2;
+                                                }                      
+                                        }      
+                                        else {
+                                            app.lyrics[applied].translation = raw_lines[i].childNodes[0].childNodes[0].textContent.trim();       
+                                            applied +=1;
+                                        }
+                                    } 
                                 }
-                            } 
-                        } catch (e) {
-                        }
+                            })
                     }
-                    req2.open('POST', url2, true);
-                    req2.send();
-                }
+                } catch (e) {console.debug("Error while parsing MXM Trans: " + e)}
 
             }
 
             if (track != "" & track != "No Title Found") {
-                getMXMSubs(track, artist, lang, time, id)
-                getMXMTrans(track, artist, lang, time, id)
+                getMXMSubs(track, artist, lang, time, id);    
             }
         },
         loadNeteaseLyrics() {
@@ -3329,6 +3360,7 @@ const app = new Vue({
                                     translation: ''
                                 });
                             app.lyrics = preLrc.reverse();
+                            if (app.lyrics[5].line == "") {app.loadNeteaseLyrics();} // Detect incomplete QQ lyrics.
                         } catch (e) {
                             console.log(e)
                             app.loadNeteaseLyrics();

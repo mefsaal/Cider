@@ -400,6 +400,46 @@ const app = new Vue({
                 return message
             }
         },
+        getProfileLz(type, name) { // For Spatial and CAR.
+            let result = "";
+            
+            // Hard-coded shiz
+            switch (name) {
+                case "Maikiwi":
+                    return "Maikiwi";
+                    break;
+
+                case "Maikiwi+":
+                return "Maikiwi+";
+                    break;
+
+                case "Minimal+":
+                return this.getLz('settings.option.audio.enableAdvancedFunctionality.tunedAudioSpatialization.profile.minimal') + "+";
+                    break;
+
+                case "live":
+                return "LIVE";
+                    break;
+            }          
+            switch (type) {
+                case "CAR":
+                    result = this.getLz('settings.option.audio.enableAdvancedFunctionality.atmosphereRealizerMode.' + name);
+                    if (result === "settings.option.audio.enableAdvancedFunctionality.atmosphereRealizerMode." + name) {
+                        return name;
+                    }
+                    else {return result;}
+                    break;
+                case "CTS":
+                    result = this.getLz('settings.option.audio.enableAdvancedFunctionality.tunedAudioSpatialization.profile.' + name.toLowerCase());
+                    if (result === "settings.option.audio.enableAdvancedFunctionality.tunedAudioSpatialization.profile." + name.toLowerCase()) {
+                        return name;
+                    }
+                    else {return result;}
+                    break;
+                default:
+                    return name;
+            }
+        },
         setLzManual() {
             app.$data.library.songs.sortingOptions = {
                 "albumName": app.getLz('term.sortBy.album'),
@@ -983,7 +1023,7 @@ const app = new Vue({
                     try {localStorage.setItem("playingBitrate", app.mk.nowPlayingItem.flavor)}
                     catch(e) {}
                 }
-                if (!app.cfg.audio.normalization) { CiderAudio.hierarchical_loading(); }
+                if (!app.cfg.audio.normalization || app.cfg.advanced.AudioContext === true) { CiderAudio.hierarchical_loading(); }
    
                 else {
                     // get unencrypted audio previews to get SoundCheck's normalization tag
@@ -3195,8 +3235,8 @@ const app = new Vue({
 
             function getMXMTrans(lang, vanity_id) {
                 try { 
-                    if (lang != "disabled" && vanity_id != '') { // Mode 2 -> Trans
-                        let url = "https://api.cider.sh/v1/lyrics?vanityID=" + vanity_id +'&source=mxm&lang=' + lang;
+                    if (lang !== "disabled" && vanity_id !== '') { // Mode 2 -> Trans
+                        let url = "https://api.cider.sh/v1/lyrics?mode=2&vanityID=" + vanity_id +'&source=mxm&lang=' + lang;
                         let req = new XMLHttpRequest();
                         req.overrideMimeType("application/json");
                         req.onload = function () { 
@@ -3228,6 +3268,9 @@ const app = new Vue({
                                 }
                             }
                         }
+                        req.onerror = function () {
+                            console.log("MXM Translation somehow died. Don't need to know why.")
+                        };
                         req.open('POST', url, true);
                         req.send();
                     }

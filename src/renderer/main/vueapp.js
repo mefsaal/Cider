@@ -734,7 +734,7 @@ const app = new Vue({
             this.platform = this.cfg.main.PLATFORM
 
             this.mklang = await this.MKJSLang()
-
+            this.mk._playbackController._storekit.overrideRestrictEnabled(false)
             try {
                 // Set profile name
                 this.chrome.userinfo = (await app.mk.api.v3.music(`/v1/me/social-profile`)).data.data[0]
@@ -2919,6 +2919,7 @@ const app = new Vue({
                     "include[albums]": "artists",
                     "include[songs]": "artists",
                     "include[music-videos]": "artists",
+                    "include[personal-recommendation]": "primary-content",
                     "fields[albums]": ["artistName", "artistUrl", "artwork", "contentRating", "editorialArtwork", "editorialVideo", "name", "playParams", "releaseDate", "url"],
                     "fields[artists]": ["name", "url", "artwork"],
                     "extend[stations]": ["airDate", "supportsAirTimeUpdates"],
@@ -3125,10 +3126,6 @@ const app = new Vue({
             let lrcfile = "";
             let richsync = [];
             const lang = app.cfg.lyrics.mxm_language //  translation language
-            function revisedRandId() {
-                return Math.random().toString(36).replace(/[^a-z]+/g, '').slice(2, 10);
-            }
-
 
             function getMXMSubs(track, artist, lang, time, id) {
                 let richsyncQuery = app.cfg.lyrics.mxm_karaoke
@@ -3159,7 +3156,7 @@ const app = new Vue({
                                     }
                                 }
 
-                                if (lrcfile == "") {
+                                if (lrcfile === "") {
                                     app.loadQQLyrics();
                                     // app.loadAMLyrics()
                                 } else {

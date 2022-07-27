@@ -2,7 +2,7 @@
   "name": "cider",
   "applicationId": "Cider",
   "productName": "Cider",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "A new cross-platform Apple Music experience based on Electron and Vue.js written from scratch with performance in mind.",
   "license": "AGPL-3.0",
   "main": "./build/index.js",
@@ -122,9 +122,9 @@
     }
   ],
   "build": {
-    "electronVersion": "19.0.8",
+    "electronVersion": "18.3.5",
     "electronDownload": {
-      "version": "20.0.0-beta.11+wvcus",
+      "version": "18.3.5+wvcus",
       "mirror": "https://github.com/castlabs/electron-releases/releases/download/v"
     },
     "appId": "cider",

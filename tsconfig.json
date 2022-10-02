@@ -6,6 +6,7 @@
     "allowJs": true,
     "noImplicitAny": true,
     "strict": true,
+    "inlineSources": true,
     "sourceMap": true,
     "outDir": "./build",
     "baseUrl": ".",
@@ -15,12 +16,7 @@
     },
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
-    "typeRoots": [
-      "node_modules/musickit-typescript",
-      "node_modules/@types"
-    ]
+    "typeRoots": ["node_modules/musickit-typescript", "node_modules/@types"]
   },
-  "include": [
-    "src/main/**/*",
-  ]
+  "include": ["src/main/**/*"]
 }

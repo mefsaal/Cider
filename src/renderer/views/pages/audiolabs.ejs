@@ -6,15 +6,32 @@
                     <b-jumbotron :header="$root.getLz('settings.option.audio.audioLab')"
                                  lead="Designed by Cider Acoustic Technologies in California"></b-jumbotron>
                 </div>
-                <div class="md-option-line" v-show="app.cfg.advanced.AudioContext === false">
+                <div class="md-option-line">
                     <div class="md-option-segment">
-                        {{$root.getLz('settings.warn.audioLab.withoutAF')}}
+                        Static Compilation Mode
+                        <br>
+                        <small>
+                            Like a compiler, this compiles multiple Audio Lab setting into one singular processor that significantly reduces CPU usage.
+                            <br>
+                            Which allows for practically infinite amount of settings to be turned on without hampering performance for users with low-end hardware.
+                            <br>
+                            However, there are caveats to this mode:
+                            <br>
+                            1 - All further audio tuning changes such as the use of equalizer will be ignored.
+                            <br>
+                            2 - Adrenaline Processor's Adaptive Option will freeze on whatever mode it was left on before compilation.
+                            <br>
+                            (A fixed mode for either 64k or 256k AAC.)
+                            <br>
+                            3 - Adrenaline Processor and whatever mode I decided wasn't good for local files will work on local files if those options were enabled before compilation.
+                        </small>
                     </div>
-                    <button class="md-btn" style="margin-top: 5px;" onclick="app.appRoute('settings')">
-                        {{$root.getLz('term.settings')}}
-                    </button>
+                    <div class="md-option-segment md-option-segment_auto">
+                        <input type="checkbox" v-model="app.cfg.audio.maikiwiAudio.staticOptimizer.state"
+                            v-on:change="CiderOptimizer()" :disabled="app.cfg.advanced.experiments.includes('staticOptimizer') === false" switch/>
+                    </div>
                 </div>
-                <div class="md-option-line" v-show="app.cfg.advanced.AudioContext === true">
+                <div class="md-option-line">
                     <div class="md-option-segment">
                         {{$root.getLz('settings.option.audio.enableAdvancedFunctionality.ciderPPE')}}
                         <br>
@@ -22,7 +39,7 @@
                     </div>
                     <div class="md-option-segment md-option-segment_auto">
                         <input type="checkbox" v-model="app.cfg.audio.maikiwiAudio.ciderPPE"
-                               v-on:change="CiderAudio.hierarchical_loading();" switch/>
+                            v-on:change="CiderAudio.hierarchical_loading();" switch/>
                     </div>
                 </div>
                 <div class="md-option-line" v-show="app.cfg.audio.maikiwiAudio.ciderPPE === true">
@@ -44,7 +61,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="md-option-line" v-show="app.cfg.advanced.AudioContext === true">
+                <div class="md-option-line">
                     <div class="md-option-segment">
                         Cider Opportunistic Correction System
                         <br>
@@ -59,7 +76,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="md-option-line" v-show="app.cfg.advanced.AudioContext === true">
+                <div class="md-option-line">
                     <div class="md-option-segment">
                         {{$root.getLz('settings.option.audio.enableAdvancedFunctionality.atmosphereRealizer')}} [1]
                         <br>
@@ -67,7 +84,7 @@
                     </div>
                     <div class="md-option-segment md-option-segment_auto">
                         <input type="checkbox" v-model="app.cfg.audio.maikiwiAudio.atmosphereRealizer1"
-                               v-on:change="CiderAudio.hierarchical_loading();" switch/>
+                            v-on:change="CiderAudio.hierarchical_loading();" switch/>
                     </div>
                 </div>
                 <div class="md-option-line" v-show="app.cfg.audio.maikiwiAudio.atmosphereRealizer1 === true">
@@ -84,7 +101,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="md-option-line" v-show="app.cfg.advanced.AudioContext === true">
+                <div class="md-option-line">
                     <div class="md-option-segment">
                         {{$root.getLz('settings.option.audio.enableAdvancedFunctionality.atmosphereRealizer')}} [2]
                         <br>
@@ -92,7 +109,7 @@
                     </div>
                     <div class="md-option-segment md-option-segment_auto">
                         <input type="checkbox" v-model="app.cfg.audio.maikiwiAudio.atmosphereRealizer2"
-                               v-on:change="CiderAudio.hierarchical_loading();" switch/>
+                            v-on:change="CiderAudio.hierarchical_loading();" switch/>
                     </div>
                 </div>
                 <div class="md-option-line" v-show="app.cfg.audio.maikiwiAudio.atmosphereRealizer2 === true">
@@ -109,7 +126,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="md-option-line" v-show="app.cfg.advanced.AudioContext === true">
+                <div class="md-option-line">
                     <div class="md-option-segment">
                         {{$root.getLz('settings.option.audio.enableAdvancedFunctionality.tunedAudioSpatialization')}}
                         <br>
@@ -117,11 +134,11 @@
                     </div>
                     <div class="md-option-segment md-option-segment_auto">
                         <input type="checkbox" v-model="app.cfg.audio.maikiwiAudio.spatial"
-                               v-on:change="CiderAudio.hierarchical_loading();" switch/>
+                            v-on:change="CiderAudio.hierarchical_loading();" switch/>
                     </div>
                 </div>
                 <div class="md-option-line"
-                     v-show="app.cfg.audio.maikiwiAudio.spatial === true">
+                    v-show="app.cfg.audio.maikiwiAudio.spatial === true">
                     <div class="md-option-segment">
                         {{$root.getLz('settings.option.audio.enableAdvancedFunctionality.tunedAudioSpatialization.profile')}}
                         <br>
@@ -133,37 +150,6 @@
                                 v-on:change="CiderAudio.hierarchical_loading();">
                             <option v-for="profile in spprofiles" :value="profile.id">{{ $root.getProfileLz("CTS", profile.name) }}</option>
                         </select>
-                    </div>
-                </div>
-                <div style="opacity: 0.5; pointer-events: none" v-if="false">
-                    <div class="md-option-header">
-                        <span>{{$root.getLz('settings.header.unfinished')}}</span>
-                    </div>
-                    <div class="md-option-line" v-show="app.cfg.advanced.AudioContext === true">
-                        <div class="md-option-segment">
-                            Cider Origami™️ Vocal Enhancer/Remasterer
-                            <br>
-                            <small>Re-textures the vocals by carving out the frequencies and adjusts them to the
-                                selected profile.<br>
-                                <b>Modern:</b>
-                                Modernizes vocals that was recorded on old microphones while preserving the artist's individualistic style.<br>
-                                <b>Articulate:</b>
-                                Wrapping every detail of the vocal to your ear, resulting in a more expressive voice.
-                            </small>
-                        </div>
-                        <div class="md-option-segment md-option-segment_auto">
-                            <select class="md-select">
-                                <option value="none">
-                                    {{$root.getLz('settings.header.visual.windowBackgroundStyle.none')}}
-                                </option>
-                                <option value="modern">
-                                    Modern
-                                </option>
-                                <option value="intimate">
-                                    Intimate
-                                </option>
-                            </select>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -186,6 +172,16 @@
 
         },
         methods: {
+            CiderOptimizer: function () {
+                if (app.cfg.audio.maikiwiAudio.staticOptimizer.state === true) {
+                    CiderAudio.hierarchical_optimizer();
+                }
+                else {
+                    app.cfg.audio.maikiwiAudio.staticOptimizer.lock = false;
+                    try {CiderAudio.audioNodes.optimizedNode.disconnect(); CiderAudio.audioNodes.optimizedNode = null;} catch (e) {}
+                    CiderAudio.hierarchical_loading()
+                }
+            }
         }
     })
 </script>

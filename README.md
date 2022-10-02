@@ -4,7 +4,7 @@
   <br><br>
   <img src="https://img.shields.io/github/stars/ciderapp/Cider?label=Stars" alt="GitHub Stars"/>
   <img src="https://img.shields.io/github/forks/ciderapp/Cider?label=Forks" alt="GitHub Forks"/>
-  <a title="Crowdin" target="_blank" href="https://crowdin.com/project/cider-music"><img src="https://badges.crowdin.net/cider-music/localized.svg"></a>
+  <a title="Crowdin" target="_blank" href="https://crowdin.com/project/cider-music"><img src="https://badges.crowdin.net/cider-i18n/localized.svg"></a>
   <br>
   <a target="_blank" href="https://ko-fi.com/cryptofyre"><img src="https://img.shields.io/badge/Buy%20Us%20a%20Coffee-donate-B48C69?logo=Ko-fi&logoColor=FFFFFF" alt="Buy Me A Coffee"/></a>
   <a target="_blank" href="https://opencollective.com/ciderapp"><img src="https://img.shields.io/opencollective/all/ciderapp?color=%237FADF2&label=Backers%20and%20Sponsors&logo=opencollective" alt="Open Collective"/></a>
@@ -30,7 +30,10 @@
 
 [![Get it from the Microsoft Store](https://img.shields.io/badge/Get_It_From_The_Microsoft_Store-100000?style=for-the-badge&logo=microsoft)](https://www.microsoft.com/store/apps/9P21XJ9D9G66)
 
-[![Get it from Windows Package Manager](https://custom-icon-badges.herokuapp.com/badge/Get_It_via_Winget_(Nightly)_-100000?style=for-the-badge&logo=winstall)](https://winstall.app/apps/CiderCollective.Cider)
+[![Get it from Windows Package Manager](https://custom-icon-badges.herokuapp.com/badge/Get_It_via_Winget_-100000?style=for-the-badge&logo=winstall)](https://winstall.app/apps/CiderCollective.Cider)
+[![Get it from Windows Package Manager](https://custom-icon-badges.herokuapp.com/badge/Get_It_via_Winget_(Nightly)_-100000?style=for-the-badge&logo=winstall)](https://winstall.app/apps/CiderCollective.Cider.Nightly)
+
+[![Get it from Chocolatey Package Manager](https://custom-icon-badges.herokuapp.com/badge/Get_It_via_Chocolatey_-100000?style=for-the-badge&logo=chocolatey)](https://community.chocolatey.org/packages/cider)
 
 <!--
 [![Get it from Windows Package Manager](https://custom-icon-badges.herokuapp.com/badge/Get_It_via_Winget_(Nightly)_-100000?style=for-the-badge&logo=winstall)](https://winstall.app/apps/CiderCollective.Cider.Nightly)

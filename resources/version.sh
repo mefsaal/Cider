@@ -1,20 +1,29 @@
 #!/bin/bash
 
-LATEST_SHA=$(curl -s https://api.github.com/repos/ciderapp/Cider/branches/stable | grep '"sha"' | head -1 | cut -d '"' -f 4)
-SHA_DATE=$(git show -s --format=%ci $LATEST_SHA)
-COMMITSINCESTABLE=$(git rev-list $LATEST_SHA..HEAD --count --since="$SHA_DATE")
+# Setup the variables needed
+if [[ $GH_REQUEST_TOKEN != "" ]]; then
+	STABLE_SHA=$(curl -H "Authorization: token ${GH_REQUEST_TOKEN}" -s https://api.github.com/repos/ciderapp/Cider/branches/stable | grep '"sha"' | head -1 | cut -d '"' -f 4)
+elif [[ $GITHUB_TOKEN != "" ]]; then
+	STABLE_SHA=$(curl -H "Authorization: token ${GITHUB_TOKEN}" -s https://api.github.com/repos/ciderapp/Cider/branches/stable | grep '"sha"' | head -1 | cut -d '"' -f 4)
+else
+	STABLE_SHA=$(curl -s https://api.github.com/repos/ciderapp/Cider/branches/stable | grep '"sha"' | head -1 | cut -d '"' -f 4)
+fi
+
+
+SHA_DATE=$(git show -s --format=%ci $STABLE_SHA)
+COMMIT_SINCE_STABLE=$(git rev-list $STABLE_SHA..HEAD --count --since="$SHA_DATE")
 CURRENT_VERSION=$(node -p -e "require('./package.json').version")
-if [[ $CIRCLE_BRANCH == "main" && $COMMITSINCESTABLE -gt 0 ]]; then
-  NEW_VERSION="${CURRENT_VERSION}-beta.${COMMITSINCESTABLE}"
-else
-  NEW_VERSION=${CURRENT_VERSION/0/$COMMITSINCESTABLE}
-fi
 
-if [[ $COMMITSINCESTABLE -gt 0 ]]; then
-  echo "Version: $NEW_VERSION"
-  sed -i "0,/$CURRENT_VERSION/s//$NEW_VERSION/" package.json
+# Set the version number for commits on main branch
+if [[ ($CIRCLE_BRANCH == "main" || $GITHUB_REF_NAME == "main") && $COMMIT_SINCE_STABLE -gt 0 && $(node -p -e "require('./package.json').version" | cut -d '.' -f 4) != $COMMIT_SINCE_STABLE ]]; then
+	NEW_VERSION="${CURRENT_VERSION}-beta.${COMMIT_SINCE_STABLE}"
+	# Update the version in package.json
+	if [[ $RUNNER_OS == "macOS" ]]; then
+		sed -i "" -e "s/$CURRENT_VERSION/$NEW_VERSION/" package.json
+	else
+		sed -i "0,/$CURRENT_VERSION/s//$NEW_VERSION/" package.json
+	fi
+	echo $NEW_VERSION
 else
-  echo "Version unchanged, commits since stable is ${COMMITSINCESTABLE}"
+	echo $CURRENT_VERSION
 fi
-
-echo "export APP_VERSION=$(node -p -e 'require("./package.json").version')" >>$BASH_ENV

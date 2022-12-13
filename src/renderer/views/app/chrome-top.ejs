@@ -75,16 +75,9 @@
                             :title="$root.getLz('term.next')" v-b-tooltip.hover></button>
                 </div>
                 <div class="app-chrome-item display--large">
-                    <button class="playback-button--small repeat" v-if="mk.repeatMode == 0"
+                    <button class="playback-button--small repeat" :class="mk.repeatMode == 1 ? 'repeatOne' : mk.repeatMode == 2 ? 'active' : ''"
                             :class="isDisabled() && 'disabled'"
-                            @click="mk.repeatMode = 1" :title="$root.getLz('term.enableRepeatOne')"
-                            v-b-tooltip.hover></button>
-                    <button class="playback-button--small repeat repeatOne" @click="mk.repeatMode = 2"
-                            :class="isDisabled() && 'disabled'" v-else-if="mk.repeatMode == 1"
-                            :title="$root.getLz('term.disableRepeatOne')" v-b-tooltip.hover></button>
-                    <button class="playback-button--small repeat active" @click="mk.repeatMode = 0"
-                            :class="isDisabled() && 'disabled'" v-else-if="mk.repeatMode == 2"
-                            :title="$root.getLz('term.disableRepeat')"
+                            @click="repeatIncrement()" :title="$root.lz.repeat[mk.repeatMode]"
                             v-b-tooltip.hover></button>
                 </div>
             </div>
@@ -287,7 +280,7 @@
                            :placeholder="$root.getLz('term.search') + '...'" v-model="search.term" ref="searchInput"
                            class="search-input" />
 
-                    <div class="search-hints-container" v-if="search.showHints && search.hints.length != 0">
+                    <div class="search-hints-container" v-if="search.showHints && search.hints.length != 0" style="right:-13px;left:unset;padding-top:0;">
                         <div class="search-hints">
                             <button class="search-hint text-overflow-elipsis" :class="{active: (search.cursor == index)}" v-for="(hint, index) in search.hints.filter((a) => {return a.content == null})"
                                     @click="search.term = hint.searchTerm;search.showHints = false;searchQuery(hint.searchTerm);search.cursor = -1">

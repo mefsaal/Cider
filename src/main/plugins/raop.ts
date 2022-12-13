@@ -89,43 +89,57 @@ export default class RAOP {
 
   private ondeviceup(name: any, host: any, port: any, addresses: any, text: any, airplay2: any = null) {
     // console.log(this.castDevices.findIndex((item: any) => {return (item.name == host.replace(".local","") && item.port == port )}))
-    let shown_name = name;
-    try {
-      let model = text.filter((u: any) => String(u).startsWith("model="));
-      let manufacturer = text.filter((u: any) => String(u).startsWith("manufacturer="));
-      let name1 = text.filter((u: any) => String(u).startsWith("name="));
-      if (name1.length > 0) {
-        shown_name = name1[0].split("=")[1];
-      } else if (manufacturer.length > 0) {
-        shown_name = (manufacturer.length > 0 ? manufacturer[0].substring(13) : "") + " " + (model.length > 0 ? model[0].substring(6) : "");
-        shown_name = shown_name.trim().length > 1 ? shown_name : (host ?? "Unknown").replace(".local", "");
-      }
-    } catch (e) {}
-    let host_name = addresses != null && typeof addresses == "object" && addresses.length > 0 ? addresses[0] : typeof addresses == "string" ? addresses : "";
 
-    if (
-      this.castDevices.findIndex((item: any) => {
-        return item != null && item.name == shown_name && item.host == host_name && item.host != "Unknown";
-      }) == -1
-    ) {
-      this.castDevices.push({
-        name: shown_name,
-        host: host_name,
-        port: port,
-        addresses: addresses,
-        txt: text,
-        airplay2: airplay2,
-      });
-      // if (this.devices.indexOf(host_name) === -1) {
-      //   this.devices.push(host_name);
-      // }
-      if (shown_name) {
-        this._win.webContents.executeJavaScript(`console.log('deviceFound','ip: ${host_name} name:${shown_name}')`).catch((err: any) => console.error(err));
-        console.log("deviceFound", host_name, shown_name);
+    let d = "";
+    let audiook = true;
+    try {
+      d = text.filter((u: any) => String(u).startsWith("features="));
+      if (d.length == 0) d = text.filter((u: any) => String(u).startsWith("ft="));
+      let features_set = d.length > 0 ? d[0].substring(d[0].indexOf("=") + 1).split(",") : [];
+      let features = [...(features_set.length > 0 ? parseInt(features_set[0]).toString(2).split("") : []), ...(features_set.length > 1 ? parseInt(features_set[1]).toString(2).split("") : [])];
+      if (features.length > 0) {
+        audiook = features[features.length - 1 - 9] == "1";
       }
-    } else {
-      this._win.webContents.executeJavaScript(`console.log('deviceFound (added)','ip: ${host_name} name:${shown_name}')`).catch((err: any) => console.error(err));
-      console.log("deviceFound (added)", host_name, shown_name);
+    } catch (_) {}
+    if (audiook) {
+      let shown_name = name;
+      try {
+        let model = text.filter((u: any) => String(u).startsWith("model="));
+        let manufacturer = text.filter((u: any) => String(u).startsWith("manufacturer="));
+        let name1 = text.filter((u: any) => String(u).startsWith("name="));
+        if (name1.length > 0) {
+          shown_name = name1[0].split("=")[1];
+        } else if (manufacturer.length > 0) {
+          shown_name = (manufacturer.length > 0 ? manufacturer[0].substring(13) : "") + " " + (model.length > 0 ? model[0].substring(6) : "");
+          shown_name = shown_name.trim().length > 1 ? shown_name : (host ?? "Unknown").replace(".local", "");
+        }
+      } catch (e) {}
+      let host_name = addresses != null && typeof addresses == "object" && addresses.length > 0 ? addresses[0] : typeof addresses == "string" ? addresses : "";
+
+      if (
+        this.castDevices.findIndex((item: any) => {
+          return item != null && item.name == shown_name && item.host == host_name && item.host != "Unknown";
+        }) == -1
+      ) {
+        this.castDevices.push({
+          name: shown_name,
+          host: host_name,
+          port: port,
+          addresses: addresses,
+          txt: text,
+          airplay2: airplay2,
+        });
+        // if (this.devices.indexOf(host_name) === -1) {
+        //   this.devices.push(host_name);
+        // }
+        if (shown_name) {
+          this._win.webContents.executeJavaScript(`console.log('deviceFound','ip: ${host_name} name:${shown_name}')`).catch((err: any) => console.error(err));
+          console.log("deviceFound", host_name, shown_name);
+        }
+      } else {
+        this._win.webContents.executeJavaScript(`console.log('deviceFound (added)','ip: ${host_name} name:${shown_name}')`).catch((err: any) => console.error(err));
+        console.log("deviceFound (added)", host_name, shown_name);
+      }
     }
   }
 
@@ -229,7 +243,7 @@ export default class RAOP {
             password: sepassword,
             txt: txt,
             airplay2: airplay2dv,
-            debug: true,
+            debug: false,
             forceAlac: false,
           }),
         });
@@ -271,7 +285,7 @@ export default class RAOP {
                 console.log(this.devices[idx].controller.key, title ?? "", artist ?? "", album ?? "");
                 this.airtunes.setTrackInfo(this.devices[idx].controller.key, title ?? "", artist ?? "", album ?? "");
                 this.uploadImageAirplay(artworkURL);
-                console.log("done");
+                console.log("done", status);
                 this.ok == 2;
               }
             }, 1000);
@@ -384,6 +398,12 @@ export default class RAOP {
               console.log("endAll");
               this.airtunes = null;
               this.devices = [];
+              this.airtunes = null;
+
+              this.ipairplay = "";
+              this.portairplay = "";
+              this.ok = 1;
+              this.i = false;
             });
           } else {
             this.devices = [];
@@ -411,6 +431,7 @@ export default class RAOP {
           this.portairplay = "";
           this.ok = 1;
           this.i = false;
+          this.devices = [];
         }
       })
       .catch((err: any) => console.error("lsdsd", err));
@@ -480,6 +501,15 @@ export default class RAOP {
 
       if (artworkURL != null) {
         this.uploadImageAirplay(artworkURL.replace("{w}", "1024").replace("{h}", "1024"));
+      }
+    }
+  }
+
+  playbackTimeDidChange(attributes: any): void {
+    // console.log(attributes)
+    if (this.airtunes && this.devices.length > 0 && attributes?.currentPlaybackTime != null && attributes?.durationInMillis != null) {
+      for (let i in this.devices) {
+        this.airtunes.setProgress(this.devices[i].controller.key, Math.round(attributes.currentPlaybackTime), Math.floor(attributes.durationInMillis / 1000));
       }
     }
   }

@@ -133,6 +133,7 @@ const app = new Vue({
     animateBackground: false,
     currentArtUrl: "",
     currentArtUrlRaw: "",
+    mvViewMode: "full",
     lyricon: false,
     currentTrackID: "",
     lyrics: [],
@@ -289,6 +290,19 @@ const app = new Vue({
     );
   },
   methods: {
+    _fetch(url, opts = {}) {
+      if (app.cfg.advanced.experiments.includes("cider_mirror") === true) {
+        if (url.includes("api.github.com/")) {
+          return fetch(url.replace("api.github.com/", "mirror.api.cider.sh/v2/api/"), opts);
+        } else if (url.includes("raw.githubusercontent.com/")) {
+          return fetch(url.replace("raw.githubusercontent.com/", "mirror.api.cider.sh/v2/raw/"), opts);
+        } else {
+          return fetch(url, opts);
+        }
+      } else {
+        return fetch(url, opts);
+      }
+    },
     setWindowHash(route = "") {
       this.setPagePos();
       window.location.hash = `#${route}`;
@@ -509,6 +523,12 @@ const app = new Vue({
         name: app.getLz("term.sortBy.name"),
         genre: app.getLz("term.sortBy.genre"),
         releaseDate: app.getLz("term.sortBy.releaseDate"),
+      };
+
+      this.lz.repeat = {
+        0: this.lz["term.repeat.all"] ?? this.lz["term.repeat"],
+        1: this.lz["term.repeat.none"] ?? this.lz["term.disableRepeat"],
+        2: this.lz["term.repeat.one"] ?? this.lz["term.enableRepeatOne"],
       };
     },
     async showSocialListeningTo() {
@@ -1217,7 +1237,11 @@ const app = new Vue({
         self.chrome.artworkReady = false;
         self.lyrics = [];
         self.richlyrics = [];
-        app.getCurrentArtURL();
+        app.getCurrentArtURL().then((urls) => {
+          app.currentArtUrl = urls?.currentArtUrl ?? "";
+          app.currentArtUrlRaw = urls?.currentArtUrlRaw ?? "";
+          ipcRenderer.send("discordrpc:updateImage", app.currentArtUrl);
+        });
         // app.getNowPlayingArtwork(42);
         app.getNowPlayingArtworkBG(32);
         app.loadLyrics();
@@ -1232,6 +1256,7 @@ const app = new Vue({
 
       this.mk.addEventListener(MusicKit.Events.playbackVolumeDidChange, (_a) => {
         this.cfg.audio.volume = this.mk.volume;
+        ipcRenderer.send("mpris:volumeChange", this.mk.volume);
       });
 
       this.refreshPlaylists(this.isDev);
@@ -1289,21 +1314,20 @@ const app = new Vue({
       const themes = ipcRenderer.sendSync("get-themes");
       await asyncForEach(themes, async (theme) => {
         if (theme.commit != "") {
-          await fetch(`https://api.github.com/repos/${theme.github_repo}/commits`)
-            .then((res) => res.json())
-            .then((res) => {
-              if (res[0].sha != theme.commit) {
-                const notify = notyf.open({
-                  className: "notyf-info",
-                  type: "info",
-                  message: app.stringTemplateParser(app.getLz("settings.notyf.visual.theme.updateAvailable"), { theme: theme.name }),
-                });
-                notify.on("click", () => {
-                  app.openSettingsPage("github-themes");
-                  notyf.dismiss(notify);
-                });
-              }
-            });
+          if (theme.commit != "") {
+            app._fetch(`https://api.github.com/repos/${theme.github_repo}/commits`).then((res) => res.json());
+            if (res[0].sha != theme.commit) {
+              const notify = notyf.open({
+                className: "notyf-info",
+                type: "info",
+                message: app.stringTemplateParser(app.getLz("settings.notyf.visual.theme.updateAvailable"), { theme: theme.name }),
+              });
+              notify.on("click", () => {
+                app.openSettingsPage("github-themes");
+                notyf.dismiss(notify);
+              });
+            }
+          }
         }
       });
     },
@@ -2143,14 +2167,16 @@ const app = new Vue({
       }, 100);
     },
     setPagePos() {
-      console.debug({
-        href: window.location.hash,
-        position: $("#app-content").scrollTop(),
-      });
-      this.$store.commit("setPagePos", {
-        href: window.location.hash,
-        position: $("#app-content").scrollTop(),
-      });
+      try {
+        console.debug({
+          href: window.location.hash,
+          position: $("#app-content").scrollTop(),
+        });
+        this.$store.commit("setPagePos", {
+          href: window.location.hash,
+          position: $("#app-content").scrollTop(),
+        });
+      } catch (e) {}
     },
     routeView(item) {
       this.setPagePos();
@@ -2322,6 +2348,20 @@ const app = new Vue({
     },
     isNextDisabled() {
       return this.isDisabled() || app.mk.queue._position + 1 === app.mk.queue.length;
+    },
+
+    switchArtworkDisplayLayout() {
+      switch (app.cfg.visual.artworkDisplayLayout) {
+        case "default":
+          app.cfg.visual.artworkDisplayLayout = "sidebar";
+          break;
+        case "sidebar":
+          app.cfg.visual.artworkDisplayLayout = "default";
+          break;
+        default:
+          app.cfg.visual.artworkDisplayLayout = "default";
+          break;
+      }
     },
 
     async getNowPlayingItemDetailed(target) {
@@ -2528,6 +2568,11 @@ const app = new Vue({
           } else if (prefs.sort === "dateAdded") {
             aa = a.relationships?.albums?.data[0]?.attributes?.dateAdded;
             bb = b.relationships?.albums?.data[0]?.attributes?.dateAdded;
+            // if dateAdded is equal, an entire album was added at once, so sorting by track number (in reverse order because lower track number should be above in descending mode)
+            if (aa === bb) {
+              aa = b.attributes.trackNumber;
+              bb = a.attributes.trackNumber;
+            }
           } else if (prefs.sort === "artistName") {
             if (a.relationships?.artists?.data[0]?.id === b.relationships?.artists?.data[0]?.id) {
               aa = a.attributes.albumName;
@@ -3263,21 +3308,35 @@ const app = new Vue({
       if (musicType === "musicVideo") {
         this.loadYTLyrics();
       } else {
-        // if (app.cfg.lyrics.enable_mxm) {
-        this.loadMXM();
-        // } else {
-        //     this.loadAMLyrics();
-        // }
+        // only load MXM lyrics if AM lyrics failed to load
+        if (app.cfg.lyrics.enable_mxm) {
+          this.loadMXM();
+        } else {
+          this.loadAMLyrics();
+        }
       }
     },
-    loadAMLyrics() {
+    async loadAMLyrics() {
       const songID = this.mk.nowPlayingItem != null ? this.mk.nowPlayingItem["_songId"] ?? this.mk.nowPlayingItem["songId"] ?? -1 : -1;
       // this.getMXM( trackName, artistName, 'en', duration);
       if (songID != -1) {
-        this.mk.api.v3.music(`v1/catalog/${this.mk.storefrontId}/songs/${songID}/lyrics`).then((response) => {
+        try {
+          let response = await this.mk.api.v3.music(`v1/catalog/${this.mk.storefrontId}/songs/${songID}/lyrics`);
           this.lyricsMediaItem = response.data?.data[0]?.attributes["ttml"];
           this.parseTTML();
-        });
+        } catch (_) {
+          if (app.cfg.lyrics.enable_mxm) {
+            this.loadQQLyrics();
+          } else {
+            this.loadMXM();
+          }
+        }
+      } else {
+        if (app.cfg.lyrics.enable_mxm) {
+          this.loadQQLyrics(); // since mxm is already prioritized, we can just load qq lyrics if am fails
+        } else {
+          this.loadMXM();
+        }
       }
     },
     addToLibrary(id) {
@@ -3368,24 +3427,78 @@ const app = new Vue({
       const track = encodeURIComponent(this.mk.nowPlayingItem != null ? this.mk.nowPlayingItem.title ?? "" : "");
       const artist = encodeURIComponent(this.mk.nowPlayingItem != null ? this.mk.nowPlayingItem.artistName ?? "" : "");
       const time = encodeURIComponent(this.mk.nowPlayingItem != null ? Math.round((this.mk.nowPlayingItem.attributes["durationInMillis"] ?? -1000) / 1000) ?? -1 : -1);
-      let id = null;
-      let vanity_id = null;
-      if (this.mk.nowPlayingItem != null && app.mk.nowPlayingItem.localFilesMetadata != null) {
-        const id = encodeURIComponent("");
-      } else {
-        id = encodeURIComponent(this.mk.nowPlayingItem != null ? app.mk.nowPlayingItem._songId ?? app.mk.nowPlayingItem["songId"] ?? "" : "");
-      }
-
+      const id = encodeURIComponent(this.mk.nowPlayingItem != null ? app.mk.nowPlayingItem._songId ?? app.mk.nowPlayingItem["songId"] ?? "" : "");
       let lrcfile = "";
       let richsync = [];
       const lang = app.cfg.lyrics.mxm_language; //  translation language
+      function revisedRandId() {
+        return Math.random()
+          .toString(36)
+          .replace(/[^a-z]+/g, "")
+          .slice(2, 10);
+      }
 
-      function getMXMSubs(track, artist, lang, time, id) {
-        let richsyncQuery = app.cfg.lyrics.mxm_karaoke;
-        let itunesid = id && id != "" ? id : ""; // Mode 1 -> Subs
-        let url = "https://api.cider.sh/v1/lyrics?" + "mode=1" + "&richsyncQuery=" + richsyncQuery + "&track=" + track + "&artist=" + artist + "&songID=" + itunesid + "&source=mxm" + "&lang=" + lang + "&time=" + time;
+      /* get token */
+      function getToken(mode, track, artist, songid, lang, time, id) {
+        if (attempt > 2) {
+          app.loadNeteaseLyrics();
+          // app.loadAMLyrics();
+        } else {
+          attempt = attempt + 1;
+          let url = "https://apic-desktop.musixmatch.com/ws/1.1/token.get?app_id=web-desktop-app-v1.0&t=" + revisedRandId();
+          let req = new XMLHttpRequest();
+          req.overrideMimeType("application/json");
+          req.open("GET", url, true);
+          req.setRequestHeader("authority", "apic-desktop.musixmatch.com");
+          req.onload = function () {
+            try {
+              let jsonResponse = JSON.parse(this.responseText);
+              let status2 = jsonResponse["message"]["header"]["status_code"];
+              if (status2 == 200) {
+                let token = jsonResponse["message"]["body"]["user_token"] ?? "";
+                if (token != "" && token != "UpgradeOnlyUpgradeOnlyUpgradeOnlyUpgradeOnly") {
+                  console.debug("200 token", mode);
+                  // token good
+                  app.mxmtoken = token;
+
+                  if (mode == 1) {
+                    getMXMSubs(track, artist, app.mxmtoken, lang, time, id);
+                  } else {
+                    getMXMTrans(songid, lang, app.mxmtoken);
+                  }
+                } else {
+                  console.debug("fake 200 token");
+                  getToken(mode, track, artist, songid, lang, time);
+                }
+              } else {
+                // console.log('token 4xx');
+                getToken(mode, track, artist, songid, lang, time);
+              }
+            } catch (e) {
+              console.log("error");
+              app.loadQQLyrics();
+              //app.loadAMLyrics();
+            }
+          };
+          req.onerror = function () {
+            console.log("error");
+            app.loadQQLyrics();
+            // app.loadAMLyrics();
+          };
+          req.send();
+        }
+      }
+
+      function getMXMSubs(track, artist, token, lang, time, id) {
+        let usertoken = encodeURIComponent(token);
+        let richsyncQuery = app.cfg.lyrics.mxm_karaoke ? "&optional_calls=track.richsync" : "";
+        let timecustom = !time || (time && time < 0) ? "" : `&f_subtitle_length=${time}&q_duration=${time}&f_subtitle_length_max_deviation=40`;
+        let itunesid = id && id != "" ? `&track_itunes_id=${id}` : "";
+        let url = "https://apic-desktop.musixmatch.com/ws/1.1/macro.subtitles.get?format=json&namespace=lyrics_richsynched" + richsyncQuery + "&subtitle_format=lrc&q_artist=" + artist + "&q_track=" + track + itunesid + "&usertoken=" + usertoken + timecustom + "&app_id=web-desktop-app-v1.0&t=" + revisedRandId();
         let req = new XMLHttpRequest();
         req.overrideMimeType("application/json");
+        req.open("GET", url, true);
+        req.setRequestHeader("authority", "apic-desktop.musixmatch.com");
         req.onload = function () {
           try {
             let jsonResponse = JSON.parse(this.responseText);
@@ -3393,14 +3506,11 @@ const app = new Vue({
             let status1 = jsonResponse["message"]["header"]["status_code"];
 
             if (status1 == 200) {
-              let id,
-                songLang = "";
+              let id = "";
               try {
                 if (jsonResponse["message"]["body"]["macro_calls"]["matcher.track.get"]["message"]["header"]["status_code"] == 200 && jsonResponse["message"]["body"]["macro_calls"]["track.subtitles.get"]["message"]["header"]["status_code"] == 200) {
                   id = jsonResponse["message"]["body"]["macro_calls"]["matcher.track.get"]["message"]["body"]["track"]["track_id"] ?? "";
                   lrcfile = jsonResponse["message"]["body"]["macro_calls"]["track.subtitles.get"]["message"]["body"]["subtitle_list"][0]["subtitle"]["subtitle_body"];
-                  vanity_id = jsonResponse["message"]["body"]["macro_calls"]["matcher.track.get"]["message"]["body"]["track"]["commontrack_vanity_id"];
-                  songLang = jsonResponse["message"]["body"]["macro_calls"]["track.lyrics.get"]["message"]["body"]["lyrics"]["lyrics_language_description"];
 
                   try {
                     let lrcrich = jsonResponse["message"]["body"]["macro_calls"]["track.richsync.get"]["message"]["body"]["richsync"]["richsync_body"];
@@ -3409,12 +3519,12 @@ const app = new Vue({
                   } catch (_) {}
                 }
 
-                if (lrcfile === "") {
+                if (lrcfile == "") {
                   app.loadQQLyrics();
                   // app.loadAMLyrics()
                 } else {
                   if (richsync == [] || richsync.length == 0) {
-                    console.log("musixmatch worki");
+                    console.log("ok");
                     // process lrcfile to json here
                     app.lyricsMediaItem = lrcfile;
                     let u = app.lyricsMediaItem.split(/[\r\n]/);
@@ -3455,10 +3565,12 @@ const app = new Vue({
                       });
                     app.lyrics = preLrc;
                   }
-
-                  // Load translation
-                  if (songLang.toLowerCase() !== lang) {
-                    getMXMTrans(lang, vanity_id);
+                  if (lrcfile != null && lrcfile != "") {
+                    // load translation
+                    getMXMTrans(id, lang, token);
+                  } else {
+                    // app.loadAMLyrics()
+                    app.loadQQLyrics();
                   }
                 }
               } catch (e) {
@@ -3466,9 +3578,12 @@ const app = new Vue({
                 app.loadQQLyrics();
                 //  app.loadAMLyrics()
               }
+            } else {
+              //4xx rejected
+              getToken(1, track, artist, "", lang, time);
             }
           } catch (e) {
-            console.error(e);
+            console.log(e);
             app.loadQQLyrics();
             //app.loadAMLyrics()
           }
@@ -3478,59 +3593,58 @@ const app = new Vue({
           console.log("error");
           // app.loadAMLyrics();
         };
-        req.open("POST", url, true);
         req.send();
       }
 
-      function getMXMTrans(lang, vanity_id) {
-        try {
-          if (lang !== "disabled" && vanity_id !== "") {
-            // Mode 2 -> Trans
-            let url = "https://api.cider.sh/v1/lyrics?mode=2&vanityID=" + vanity_id + "&source=mxm&lang=" + lang;
-            let req = new XMLHttpRequest();
-            req.overrideMimeType("application/json");
-            req.onload = function () {
-              if (req.status == 200) {
-                // If it's not 200, 237890127389012 things could go wrong and I don't really care what those things are.
-                let jsonResponse = JSON.parse(this.responseText);
-                let applied = 0;
-                for (let i = 0; applied < app.lyrics.length; i++) {
-                  if (app.lyrics[applied].line.trim() === "") {
-                    applied += 1;
-                  }
-                  if (app.lyrics[applied].line.trim() === jsonResponse[i]) {
-                    // Do Nothing
-                    applied += 1;
-                  } else {
-                    if (app.lyrics[applied].line === "lrcInstrumental") {
-                      if (app.lyrics[applied + 1].line.trim() === jsonResponse[i]) {
-                        // Do Nothing
-                        applied += 2;
-                      } else {
-                        app.lyrics[applied + 1].translation = jsonResponse[i];
-                        applied += 2;
+      function getMXMTrans(id, lang, token) {
+        if (lang != "disabled" && id != "") {
+          let usertoken = encodeURIComponent(token);
+          let url2 = "https://apic-desktop.musixmatch.com/ws/1.1/crowd.track.translations.get?translation_fields_set=minimal&selected_language=" + lang + "&track_id=" + id + "&comment_format=text&part=user&format=json&usertoken=" + usertoken + "&app_id=web-desktop-app-v1.0&t=" + revisedRandId();
+          let req2 = new XMLHttpRequest();
+          req2.overrideMimeType("application/json");
+          req2.open("GET", url2, true);
+          req2.setRequestHeader("authority", "apic-desktop.musixmatch.com");
+          req2.onload = function () {
+            try {
+              let jsonResponse2 = JSON.parse(this.responseText);
+              console.log(jsonResponse2);
+              let status2 = jsonResponse2["message"]["header"]["status_code"];
+              if (status2 == 200) {
+                try {
+                  let preTrans = [];
+                  let u = app.lyrics;
+                  let translation_list = jsonResponse2["message"]["body"]["translations_list"];
+                  if (translation_list.length > 0) {
+                    for (var i = 0; i < u.length - 1; i++) {
+                      preTrans[i] = "";
+                      for (var trans_line of translation_list) {
+                        if (u[i].line == " " + trans_line["translation"]["matched_line"] || u[i].line == trans_line["translation"]["matched_line"]) {
+                          u[i].translation = trans_line["translation"]["description"];
+                          break;
+                        }
                       }
-                    } else {
-                      app.lyrics[applied].translation = jsonResponse[i];
-                      applied += 1;
                     }
+                    app.lyrics = u;
                   }
+                } catch (e) {
+                  /// not found trans -> ignore
                 }
+              } else {
+                //4xx rejected
+                getToken(2, "", "", id, lang, "");
               }
-            };
-            req.onerror = function () {
-              console.log("MXM Translation somehow died. Don't need to know why.");
-            };
-            req.open("POST", url, true);
-            req.send();
-          }
-        } catch (e) {
-          console.debug("Error while parsing MXM Trans: " + e);
+            } catch (e) {}
+          };
+          req2.send();
         }
       }
 
       if ((track != "") & (track != "No Title Found")) {
-        getMXMSubs(track, artist, lang, time, id);
+        if (app.mxmtoken != null && app.mxmtoken != "") {
+          getMXMSubs(track, artist, app.mxmtoken, lang, time, id);
+        } else {
+          getToken(1, track, artist, "", lang, time);
+        }
       }
     },
     loadNeteaseLyrics() {
@@ -4300,46 +4414,14 @@ const app = new Vue({
       }, 200);
     },
     async getCurrentArtURL() {
-      try {
-        let artworkSize = 50;
-        if (app.getThemeDirective("lcdArtworkSize") != "") {
-          artworkSize = app.getThemeDirective("lcdArtworkSize");
-        } else if (this.cfg.visual.directives.windowLayout == "twopanel") {
-          artworkSize = 110;
-        }
-        this.currentArtUrl = "";
-        this.currentArtUrlRaw = "";
-        if (app.mk.nowPlayingItem != null && app.mk.nowPlayingItem.attributes != null && app.mk.nowPlayingItem.attributes.artwork != null && app.mk.nowPlayingItem.attributes.artwork.url != null && app.mk.nowPlayingItem.attributes.artwork.url != "") {
-          this.currentArtUrlRaw = this.mk["nowPlayingItem"]["attributes"]["artwork"]["url"] ?? "";
-          this.currentArtUrl = (this.mk["nowPlayingItem"]["attributes"]["artwork"]["url"] ?? "").replace("{w}", artworkSize).replace("{h}", artworkSize);
-          if (this.mk.nowPlayingItem._assets[0].artworkURL) {
-            this.currentArtUrl = this.mk.nowPlayingItem._assets[0].artworkURL;
-          }
-          try {
-            // document.querySelector('.app-playback-controls .artwork').style.setProperty('--artwork', `url("${this.currentArtUrl}")`);
-          } catch (e) {}
-        } else {
-          let data = await this.mk.api.v3.music(`/v1/me/library/songs/${this.mk.nowPlayingItem.id}`);
-          data = data.data.data[0];
-          if (data != null && data !== "" && data.attributes != null && data.attributes.artwork != null) {
-            this.currentArtUrlRaw = data["attributes"]["artwork"]["url"] ?? "";
-            this.currentArtUrl = (data["attributes"]["artwork"]["url"] ?? "").replace("{w}", artworkSize).replace("{h}", artworkSize);
-            if (this.mk.nowPlayingItem._assets[0].artworkURL) {
-              this.currentArtUrl = this.mk.nowPlayingItem._assets[0].artworkURL;
-            }
-            ipcRenderer.send("discordrpc:updateImage", this.currentArtUrl ?? "");
-            try {
-              // document.querySelector('.app-playback-controls .artwork').style.setProperty('--artwork', `url("${this.currentArtUrl}")`);
-            } catch (e) {}
-          } else {
-            this.currentArtUrlRaw = "";
-            this.currentArtUrl = "";
-            try {
-              // document.querySelector('.app-playback-controls .artwork').style.setProperty('--artwork', `url("${this.currentArtUrl}")`);
-            } catch (e) {}
-          }
-        }
-      } catch (e) {}
+      let artworkSize = 50;
+      if (app.getThemeDirective("lcdArtworkSize") !== "") {
+        artworkSize = app.getThemeDirective("lcdArtworkSize");
+      } else if (this.cfg.visual.directives.windowLayout === "twopanel") {
+        artworkSize = 110;
+      }
+      const mediaItem = (app?.mk?.nowPlayingItem?.attributes?.artwork?.url ? app?.mk?.nowPlayingItem : null) ?? (await this.mk.api.v3.music(`/v1/me/library/songs/${this.mk?.nowPlayingItem?.id}`)?.data?.data?.data[0]) ?? {};
+      return { currentArtUrlRaw: mediaItem?.attributes?.artwork?.url ?? "", currentArtUrl: mediaItem?._assets[0]?.artworkURL ?? mediaItem?.attributes?.artwork?.url?.replace("{w}", artworkSize).replace("{h}", artworkSize) };
     },
     async setLibraryArt() {
       if (typeof this.mk.nowPlayingItem === "undefined") return;
@@ -4510,6 +4592,22 @@ const app = new Vue({
     checkMuteChange() {
       if (this.cfg.audio.muted) {
         this.cfg.audio.muted = false;
+      }
+    },
+    repeatIncrement() {
+      switch (app.mk.repeatMode) {
+        default:
+        case MusicKit.PlayerRepeatMode.none:
+          app.mk.repeatMode = MusicKit.PlayerRepeatMode.all;
+          break;
+
+        case MusicKit.PlayerRepeatMode.all:
+          app.mk.repeatMode = MusicKit.PlayerRepeatMode.one;
+          break;
+
+        case MusicKit.PlayerRepeatMode.one:
+          app.mk.repeatMode = MusicKit.PlayerRepeatMode.none;
+          break;
       }
     },
     async apiCall(url, callback) {
@@ -4875,11 +4973,15 @@ const app = new Vue({
       }
       app.modals.settings = true;
     },
-    fullscreen(flag) {
+    fullscreen(flag, mv = false) {
       this.fullscreenState = flag;
       if (flag) {
         ipcRenderer.send("setFullScreen", true);
-        app.appMode = "fullscreen";
+        if (!mv) {
+          app.appMode = "fullscreen";
+        } else {
+          app.mvViewMode = "full";
+        }
 
         document.addEventListener("keydown", (event) => {
           if (event.key === "Escape" && app.appMode === "fullscreen") {
@@ -4892,12 +4994,13 @@ const app = new Vue({
       }
     },
     pip() {
-      document.querySelector("video#apple-music-video-player").requestPictureInPicture();
-      // .then(pictureInPictureWindow => {
-      //     pictureInPictureWindow.addEventListener("resize", () => {
-      //         console.log("[PIP] Resized")
-      //     }, false);
-      //   })
+      // document.querySelector("video#apple-music-video-player").requestPictureInPicture();
+      // // .then(pictureInPictureWindow => {
+      // //     pictureInPictureWindow.addEventListener("resize", () => {
+      // //         console.log("[PIP] Resized")
+      // //     }, false);
+      // //   })
+      this.mvViewMode = this.mvViewMode == "mini" ? "full" : "mini";
     },
     miniPlayer(flag) {
       if (flag) {

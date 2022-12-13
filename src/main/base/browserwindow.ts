@@ -514,17 +514,13 @@ export class BrowserWindow {
 
     app.get("/audio/cideraudio.js", (_req, res) => {
       if (existsSync(join(utils.getPath("externals"), "/audio.js"))) {
-        res.sendFile(join(utils.getPath("externals"), "/audio.js"));
+        if (utils.getStoreValue("audio.maikiwiAudio.cloud") == true) {
+          res.sendFile(join(utils.getPath("externals"), "/cloud/audio.js"));
+        } else {
+          res.sendFile(join(utils.getPath("externals"), "/audio.js"));
+        }
       } else {
         res.sendFile(join(utils.getPath("srcPath"), "./renderer/audio/audio.js"));
-      }
-    });
-
-    app.get("/audio/cideraudiorenderer.js", (_req, res) => {
-      if (existsSync(join(utils.getPath("externals"), "/renderer.js"))) {
-        res.sendFile(join(utils.getPath("externals"), "/renderer.js"));
-      } else {
-        res.sendFile(join(utils.getPath("srcPath"), "./renderer/audio/renderer.js"));
       }
     });
 
@@ -882,9 +878,9 @@ export class BrowserWindow {
           mkdirSync(utils.getPath("plugins"));
         }
         if (url.endsWith("/")) url = url.slice(0, -1);
-        let response = await fetch(`${url}/archive/refs/heads/main.zip`);
+        let response = await utils.fetch(`${url}/archive/refs/heads/main.zip`);
         let repo = url.split("/").slice(-2).join("/");
-        let apiRepo = await fetch(`https://api.github.com/repos/${repo}`).then((res) => res.json());
+        let apiRepo = await utils.fetch(`https://api.github.com/repos/${repo}`).then((res) => res.json());
         console.debug(`REPO ID: ${apiRepo.id}`);
         // extract the files from the first folder in the zip response
         let zip = new AdmZip(await response.buffer());
@@ -894,7 +890,7 @@ export class BrowserWindow {
         }
         console.log(join(utils.getPath("plugins"), "gh_" + apiRepo.id));
         zip.extractEntryTo(entry, join(utils.getPath("plugins"), "gh_" + apiRepo.id), false, true);
-        let commit = await fetch(`https://api.github.com/repos/${repo}/commits`).then((res) => res.json());
+        let commit = await utils.fetch(`https://api.github.com/repos/${repo}/commits`).then((res) => res.json());
         console.debug(`COMMIT SHA: ${commit[0].sha}`);
         let theme = JSON.parse(readFileSync(join(utils.getPath("plugins"), "gh_" + apiRepo.id, "package.json"), "utf8"));
         theme.id = apiRepo.id;
@@ -919,9 +915,16 @@ export class BrowserWindow {
           mkdirSync(utils.getPath("themes"));
         }
         if (url.endsWith("/")) url = url.slice(0, -1);
-        let response = await fetch(`${url}/archive/refs/heads/main.zip`);
+        let response = await utils.fetch(`${url}/archive/refs/heads/main.zip`);
         let repo = url.split("/").slice(-2).join("/");
-        let apiRepo = await fetch(`https://api.github.com/repos/${repo}`).then((res) => res.json());
+        let apiRepo = await utils
+          .fetch(`https://api.github.com/repos/${repo}`, {
+            headers: {
+              "User-Agent": utils.getWindow().webContents.getUserAgent(),
+            },
+          })
+          .then((res) => res.json());
+        console.error(apiRepo);
         console.debug(`REPO ID: ${apiRepo.id}`);
         // extract the files from the first folder in the zip response
         let zip = new AdmZip(await response.buffer());
@@ -931,13 +934,14 @@ export class BrowserWindow {
         }
         console.log(join(utils.getPath("themes"), "gh_" + apiRepo.id));
         zip.extractEntryTo(entry, join(utils.getPath("themes"), "gh_" + apiRepo.id), false, true);
-        let commit = await fetch(`https://api.github.com/repos/${repo}/commits`).then((res) => res.json());
+        let commit = await utils.fetch(`https://api.github.com/repos/${repo}/commits`).then((res) => res.json());
         console.debug(`COMMIT SHA: ${commit[0].sha}`);
         let theme = JSON.parse(readFileSync(join(utils.getPath("themes"), "gh_" + apiRepo.id, "theme.json"), "utf8"));
         theme.id = apiRepo.id;
         theme.commit = commit[0].sha;
         writeFileSync(join(utils.getPath("themes"), "gh_" + apiRepo.id, "theme.json"), JSON.stringify(theme, null, 4), "utf8");
       } catch (e) {
+        console.error(e);
         returnVal.success = false;
       }
       BrowserWindow.win.webContents.send("theme-installed", returnVal);
@@ -1041,6 +1045,7 @@ export class BrowserWindow {
         i18nListing = [];
 
       for (let i = 0; i < i18nFiles.length; i++) {
+        if (i18nFiles[i] == "index.json") continue;
         console.debug("[i18n] Processing file: " + join(utils.getPath("i18nPath"), i18nFiles[i]));
         const i18n: { [index: string]: Object } = JSON.parse(readFileSync(join(utils.getPath("i18nPath"), i18nFiles[i]), "utf8"));
         i18nListing.push({

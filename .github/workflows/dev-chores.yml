@@ -1,4 +1,4 @@
-name: PR Chores
+name: Developer Chores
 
 on: [pull_request]
 
@@ -9,19 +9,21 @@ jobs:
       strategy:
         matrix:
           os: [ubuntu-latest]
-          node: [14]
+          node: [18]
 
       steps:
         - name: Checkout 🛎
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
 
-        - name: Setup pnpm 🚧F
-          uses: pnpm/action-setup@v2.2.2
+        - uses: pnpm/action-setup@v2
+          name: Setup pnpm 🚧
+          id: pnpm-install
           with:
             version: 7
+            run_install: false
 
         - name: Setup node env 🏗
-          uses: actions/setup-node@v3.4.1
+          uses: actions/setup-node@v3
           with:
             node-version: ${{ matrix.node }}
             check-latest: true
@@ -31,7 +33,9 @@ jobs:
           run: pnpm install
 
         - name: Run linter 👀
-          uses: wearerequired/lint-action@v2
+          run: pnpm format:write
+
+        - name: Comment Suggestions 🗒️
+          uses: getsentry/action-git-diff-suggestions@main
           with:
-            prettier: true
-            prettier_args: "'src/**/*.{js,json,ts,css,vue,less}'"
+            message: Prettier Suggestion

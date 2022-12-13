@@ -724,10 +724,10 @@ input[type="range"].web-slider::-webkit-slider-runnable-track {
 
 .search-hints-container {
   top: 44px;
-  // background: rgb(30 30 30);
   #cmenu.container();
 
   .search-hints {
+    background: rgb(30 30 30) !important;
     #cmenu.body();
 
     .search-hint {
@@ -2396,6 +2396,12 @@ input[type="range"].web-slider.display--small::-webkit-slider-thumb {
   height: 100%;
   bottom: 0;
   z-index: 100000;
+  &.mini {
+    width: 20%;
+    height: 20%;
+    right: 2vw;
+    bottom: 5vh;
+  }
 }
 
 #apple-music-video-container {
@@ -2424,6 +2430,10 @@ input[type="range"].web-slider.display--small::-webkit-slider-thumb {
     bottom: 0;
     filter: opacity(0.6);
     transition: 0.2s ease-in-out filter;
+
+    &.mini {
+      right: 0px;
+    }
 
     &:hover {
       filter: opacity(1);

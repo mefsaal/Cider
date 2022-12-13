@@ -3,16 +3,11 @@ const CiderAudio = {
   source: null,
   audioNodes: {
     gainNode: null,
-    spatialNode: null,
     audioBands: null,
     vibrantbassNode: null,
-    llpw: null,
     recorderNode: null,
     intelliGainComp: null,
-    atmosphereRealizer2: null,
-    atmosphereRealizer1: null,
-    opportunisticCorrection: null,
-    optimizedNode: null,
+    cloudProcessor: null,
   },
   ccON: false,
   mediaRecorder: null,
@@ -34,16 +29,11 @@ const CiderAudio = {
       try {
         CiderAudio.audioNodes = {
           gainNode: null,
-          spatialNode: null,
           audioBands: null,
           vibrantbassNode: null,
-          llpw: null,
           recorderNode: null,
           intelliGainComp: null,
-          atmosphereRealizer2: null,
-          atmosphereRealizer1: null,
-          opportunisticCorrection: null,
-          optimizedNode: null,
+          cloudProcessor: null,
         };
       } catch (e) {}
       CiderAudio.source.connect(CiderAudio.context.destination);
@@ -242,22 +232,10 @@ const CiderAudio = {
       description: "",
     },
   ],
-  spatial_ninf: function () {
-    CiderAudio.audioNodes.spatialNode = null;
-    CiderAudio.audioNodes.spatialNode = CiderAudio.context.createConvolver();
-    CiderAudio.audioNodes.spatialNode.normalize = false;
-
-    let spatialProfile = CiderAudio.spatialProfiles.find(function (profile) {
-      return profile.id === app.cfg.audio.maikiwiAudio.spatialProfile;
-    });
-
-    if (spatialProfile === undefined) {
-      spatialProfile = CiderAudio.spatialProfiles[0];
-    }
-    fetch(spatialProfile.file).then(async (impulseData) => {
-      let bufferedImpulse = await impulseData.arrayBuffer();
-      CiderAudio.audioNodes.spatialNode.buffer = await CiderAudio.context.decodeAudioData(bufferedImpulse);
-    });
+  cloudProcessor_ninf: function () {
+    CiderAudio.audioNodes.cloudProcessor = null;
+    CiderAudio.audioNodes.cloudProcessor = CiderAudio.context.createConvolver();
+    CiderAudio.audioNodes.cloudProcessor.normalize = false;
 
     // Always destination
     CiderAudio.audioNodes.spatialNode.connect(CiderAudio.context.destination);
@@ -275,34 +253,12 @@ const CiderAudio = {
     if (CiderAudio.audioNodes.vibrantbassNode !== null) {
       filters = filters.concat(CiderAudio.audioNodes.vibrantbassNode);
     }
-    if (CiderAudio.audioNodes.llpw !== null && CiderAudio.audioNodes.llpw.length > 2) {
-      filters = filters.concat(CiderAudio.audioNodes.llpw);
-    }
 
     if (!filters || filters.length === 0) {
       let filterlessGain = 1;
-      // Impulse Calculation
-      if (CiderAudio.audioNodes.llpw !== null && CiderAudio.audioNodes.llpw.length <= 2) {
-        filterlessGain = filterlessGain * 1.109174815262401;
-      }
-      if (app.cfg.audio.maikiwiAudio.atmosphereRealizer2 === true) {
-        filterlessGain = filterlessGain * 1.096478196143185;
-      }
-      if (app.cfg.audio.maikiwiAudio.atmosphereRealizer1 === true) {
-        filterlessGain = filterlessGain * 1.096478196143185;
-      }
-      if (app.cfg.audio.maikiwiAudio.spatial == true) {
-        let spatialProfile = CiderAudio.spatialProfiles.find(function (profile) {
-          return profile.id === app.cfg.audio.maikiwiAudio.spatialProfile;
-        });
-        if (spatialProfile === undefined) {
-          spatialProfile = CiderAudio.spatialProfiles[0];
-        }
-        filterlessGain = filterlessGain * spatialProfile.gainComp;
-      }
-      filterlessGain = Math.pow(10, (-1 * (20 * Math.log10(filterlessGain))) / 20).toFixed(4);
-      filterlessGain > 1.0 ? CiderAudio.audioNodes.intelliGainComp.gain.exponentialRampToValueAtTime(1.0, CiderAudio.context.currentTime + 0.3) : CiderAudio.audioNodes.intelliGainComp.gain.exponentialRampToValueAtTime(filterlessGain, CiderAudio.context.currentTime + 0.3);
-      console.debug(`[Cider][Audio] IntelliGainComp: ${filterlessGain > 1.0 ? 0 : (20 * Math.log10(filterlessGain)).toFixed(2)} dB (${filterlessGain > 1.0 ? 1 : filterlessGain})`);
+
+      CiderAudio.audioNodes.intelliGainComp.gain.exponentialRampToValueAtTime(1.0, CiderAudio.context.currentTime + 0.3);
+      console.debug(`[Cider][Audio] IntelliGainComp: 0 dB (1.0)`);
       return;
     }
 
@@ -336,25 +292,6 @@ const CiderAudio = {
       if (gain > maxGain) maxGain = gain;
     }
 
-    // Impulse Calculation
-    if (CiderAudio.audioNodes.llpw !== null && CiderAudio.audioNodes.llpw.length <= 2) {
-      maxGain = maxGain * 1.109174815262401;
-    }
-    if (app.cfg.audio.maikiwiAudio.atmosphereRealizer2 === true) {
-      maxGain = maxGain * 1.096478196143185;
-    }
-    if (app.cfg.audio.maikiwiAudio.atmosphereRealizer1 === true) {
-      maxGain = maxGain * 1.096478196143185;
-    }
-    if (app.cfg.audio.maikiwiAudio.spatial == true) {
-      let spatialProfile = CiderAudio.spatialProfiles.find(function (profile) {
-        return profile.id === app.cfg.audio.maikiwiAudio.spatialProfile;
-      });
-      if (spatialProfile === undefined) {
-        spatialProfile = CiderAudio.spatialProfiles[0];
-      }
-      maxGain = maxGain * spatialProfile.gainComp;
-    }
     maxGain = Math.pow(10, (-1 * (20 * Math.log10(maxGain))) / 20).toFixed(4);
     maxGain > 1.0 ? CiderAudio.audioNodes.intelliGainComp.gain.exponentialRampToValueAtTime(1.0, CiderAudio.context.currentTime + 0.3) : CiderAudio.audioNodes.intelliGainComp.gain.exponentialRampToValueAtTime(maxGain, CiderAudio.context.currentTime + 0.3);
     console.debug(`[Cider][Audio] IntelliGainComp: ${maxGain > 1.0 ? 0 : (20 * Math.log10(maxGain)).toFixed(2)} dB (${maxGain > 1.0 ? 1 : maxGain})`);
